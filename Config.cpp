@@ -6,8 +6,12 @@ using namespace ATL;
 #define BUFFER_SIZE 2048
 #define SECTION_UI L"UI"
 #define SECTION_APP L"App"
-#define KEY_UI_IMAGE L"image"
-#define KEY_UI_IMAGE_DEFAULT L"image.ico"
+#define KEY_UI_ONIMAGE L"OnImage"
+#define KEY_UI_ONIMAGE_DEFAULT L"image.ico"
+
+#define KEY_UI_OFFIMAGE L"OffImage"
+#define KEY_UI_OFFIMAGE_DEFAULT L"image.ico"
+
 #define KEY_APP_PATH L"Path"
 #define KEY_APP_PATH_DEFAULT NULL
 #define KEY_APP_ARGS L"Args"
@@ -16,7 +20,8 @@ using namespace ATL;
 CConfig::CConfig()
     : m_ModuleDirectory(),
       m_IniPath(),
-      m_IconPath(),
+      m_OnIconPath(),
+      m_OffIconPath(),
       m_AppPath(),
       m_AppArgs()
 {
@@ -56,12 +61,20 @@ void CConfig::Initialize()
     m_ModuleDirectory.RemoveFileSpec();
     GetPrivateProfileString(
         SECTION_UI,
-        KEY_UI_IMAGE,
-        KEY_UI_IMAGE_DEFAULT,
+        KEY_UI_ONIMAGE,
+        KEY_UI_ONIMAGE_DEFAULT,
         buffer,
         BUFFER_SIZE, m_IniPath);
-    m_IconPath = buffer;
-    Canonicalize(&m_IconPath);
+    m_OnIconPath = buffer;
+    Canonicalize(&m_OnIconPath);
+    GetPrivateProfileString(
+        SECTION_UI,
+        KEY_UI_OFFIMAGE,
+        KEY_UI_OFFIMAGE_DEFAULT,
+        buffer,
+        BUFFER_SIZE, m_IniPath);
+    m_OffIconPath = buffer;
+    Canonicalize(&m_OffIconPath);
     GetPrivateProfileString(
         SECTION_APP,
         KEY_APP_PATH,
@@ -85,9 +98,14 @@ const ATL::CPath *CConfig::GetModuleDirectory() const\
     return &m_ModuleDirectory;
 }
 
-const ATL::CPath *CConfig::GetIconPath() const
+const ATL::CPath *CConfig::GetOnIconPath() const
 {
-    return &m_IconPath;
+    return &m_OnIconPath;
+}
+
+const ATL::CPath *CConfig::GetOffIconPath() const
+{
+    return &m_OffIconPath;
 }
 
 const ATL::CPath *CConfig::GetAppPath() const

@@ -6,7 +6,6 @@
 #include <assert.h>
 #include "Config.h"
 
-#define TRAYICONID  1//             ID number for the Notify Icon
 #define SWM_TRAYMSG WM_APP//        the message ID sent to our window
 
 #define SWM_SHOW    WM_APP + 1//    show the window
@@ -24,13 +23,15 @@ CConfig config;
 
 // Global Variables:
 HINSTANCE       hInst;  // current instance
-NOTIFYICONDATA  niData; // notify icon data
+
+
+NOTIFYICONDATA  niData ;
+
 HWND hDlg;
 // Forward declarations of functions included in this code module:
 BOOL                InitInstance(HINSTANCE, int);
 BOOL                OnInitDialog(HWND hWnd);
 void                ShowContextMenu(HWND hWnd);
-ULONGLONG           GetDllVersion(LPCTSTR lpszDllName);
 
 CString infoString;
 CString cmdLine;
@@ -47,6 +48,21 @@ void CleanupThreadHandle()
         CloseHandle(hProcessStartThread);
         hProcessStartThread = NULL;
     }
+}
+
+void IntializeNotificationData()
+{
+    ZeroMemory(&niData, sizeof(NOTIFYICONDATA));
+    niData.cbSize = sizeof(NOTIFYICONDATA);
+    niData.uID = 100;
+    niData.uFlags = NIF_ICON | NIF_MESSAGE;
+    niData.hWnd = hDlg;
+    niData.uCallbackMessage = SWM_TRAYMSG;
+    niData.uVersion = NOTIFYICON_VERSION_4;
+}
+
+void DestroyNotificationData()
+{
 }
 
 DWORD WINAPI ProcessHostThreadFunc(LPVOID lpParam)
@@ -118,6 +134,27 @@ DWORD WINAPI ProcessHostThreadFunc(LPVOID lpParam)
     return 0;
 }
 
+void ShowNotificationData(bool on)
+{
+    NOTIFYICONDATA nid;
+    ZeroMemory(&nid, sizeof(nid));
+    const CPath * imagePath = on ? config.GetOnIconPath() : config.GetOffIconPath();
+    UINT flags = LR_MONOCHROME;
+    flags |= LR_LOADFROMFILE;
+    HICON icon = (HICON)LoadImage(
+                     NULL,
+                     *imagePath,
+                     IMAGE_ICON,
+                     GetSystemMetrics(SM_CXSMICON),
+                     GetSystemMetrics(SM_CYSMICON),
+                     flags);
+    nid.hIcon = icon;
+    nid.uID = niData.uID;
+    nid.hWnd = niData.hWnd;
+    nid.uFlags = NIF_ICON;
+    Shell_NotifyIcon(NIM_MODIFY, &nid);
+    DestroyIcon(icon);
+}
 void StartProcess()
 {
     if (hProcessStartThread == NULL)
@@ -153,7 +190,10 @@ void StartProcess()
                 assert(false);
         }
     }
+
+    ShowNotificationData(true);
 }
+
 void StopProcess()
 {
     if (hProcessStartThread != NULL)
@@ -162,6 +202,8 @@ void StopProcess()
         assert(succeeded);
         CleanupThreadHandle();
     }
+
+    ShowNotificationData(false);
 }
 
 INT_PTR CALLBACK    DlgProc(HWND, UINT, WPARAM, LPARAM);
@@ -214,8 +256,11 @@ int APIENTRY _tWinMain(
 
     CloseHandle(hWaitProcessStartEvent);
     CloseHandle(hProcessStartThread);
+    DestroyNotificationData();
     return (int) msg.wParam;
 }
+
+
 
 //  Initialize the window and tray icon
 BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
@@ -235,56 +280,27 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
         return FALSE;
     }
 
-    // Fill the NOTIFYICONDATA structure and call Shell_NotifyIcon
-    // zero the structure - note:   Some Windows funtions require this but
-    //                              I can't be bothered which ones do and
-    //                              which ones don't.
-    ZeroMemory(&niData, sizeof(NOTIFYICONDATA));
-    ULONGLONG ullVersion = GetDllVersion(_T("Shell32.dll"));
-
-    if (ullVersion >= MAKEDLLVERULL(5, 0, 0, 0))
-    {
-        niData.cbSize = sizeof(NOTIFYICONDATA);
-    }
-    else
-    {
-        niData.cbSize = NOTIFYICONDATA_V2_SIZE;
-    }
-
-    const CPath *imagePath = config.GetIconPath();
-    niData.uID = TRAYICONID;
-    niData.uFlags = NIF_ICON | NIF_MESSAGE | NIF_TIP;
-    niData.hIcon = (HICON)LoadImage(
-                       NULL,
-                       *imagePath,
-                       IMAGE_ICON,
-                       GetSystemMetrics(SM_CXSMICON),
-                       GetSystemMetrics(SM_CYSMICON),
-                       LR_DEFAULTCOLOR | LR_LOADFROMFILE);
-    // the window to send messages to and the message to send
-    //      note:   the message value should be in the
-    //              range of WM_APP through 0xBFFF
-    niData.hWnd = hDlg;
-    niData.uCallbackMessage = SWM_TRAYMSG;
-    // tooltip message
-    lstrcpyn(niData.szTip,
-             _T("Time flies like an arrow but\n   fruit flies like a banana!"),
-             sizeof(niData.szTip) / sizeof(TCHAR));
+    IntializeNotificationData();
+    const CPath * imagePath =  config.GetOffIconPath();
+    UINT flags = LR_LOADFROMFILE;
+    HICON icon = (HICON)LoadImage(
+                     NULL,
+                     *imagePath,
+                     IMAGE_ICON,
+                     GetSystemMetrics(SM_CXSMICON),
+                     GetSystemMetrics(SM_CYSMICON),
+                     flags);
+    niData.hIcon = icon;
     Shell_NotifyIcon(NIM_ADD, &niData);
-
-    // free icon handle
-    if (niData.hIcon && DestroyIcon(niData.hIcon))
-    {
-        niData.hIcon = NULL;
-    }
-
-    // call ShowWindow here to make the dialog initially visible
+    DestroyIcon(icon);
+    niData.hIcon = NULL;
+    StartProcess();
     return TRUE;
 }
 
 BOOL OnInitDialog(HWND hWnd)
 {
-    const CPath *imagePath = config.GetIconPath();
+    const CPath *imagePath = config.GetOffIconPath();
     HMENU hMenu = GetSystemMenu(hWnd, FALSE);
 
     if (hMenu)
@@ -299,10 +315,10 @@ BOOL OnInitDialog(HWND hWnd)
                       IMAGE_ICON,
                       GetSystemMetrics(SM_CXSMICON),
                       GetSystemMetrics(SM_CYSMICON),
-                      LR_DEFAULTCOLOR | LR_LOADFROMFILE);
+                      LR_LOADFROMFILE);
     SendMessage(hWnd, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
     SendMessage(hWnd, WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
-    StartProcess();
+    DestroyIcon(hIcon);
     return TRUE;
 }
 
@@ -340,38 +356,6 @@ void ShowContextMenu(HWND hWnd)
     }
 }
 
-// Get dll version number
-ULONGLONG GetDllVersion(LPCTSTR lpszDllName)
-{
-    ULONGLONG ullVersion = 0;
-    HINSTANCE hinstDll;
-    hinstDll = LoadLibrary(lpszDllName);
-
-    if (hinstDll)
-    {
-        DLLGETVERSIONPROC pDllGetVersion;
-        pDllGetVersion = (DLLGETVERSIONPROC)GetProcAddress(hinstDll, "DllGetVersion");
-
-        if (pDllGetVersion)
-        {
-            DLLVERSIONINFO dvi;
-            HRESULT hr;
-            ZeroMemory(&dvi, sizeof(dvi));
-            dvi.cbSize = sizeof(dvi);
-            hr = (*pDllGetVersion)(&dvi);
-
-            if (SUCCEEDED(hr))
-            {
-                ullVersion = MAKEDLLVERULL(dvi.dwMajorVersion, dvi.dwMinorVersion, 0, 0);
-            }
-        }
-
-        FreeLibrary(hinstDll);
-    }
-
-    return ullVersion;
-}
-
 void UpdateInfoText()
 {
     HWND wnd = GetDlgItem(hDlg, IDC_STATIC_INFO);
@@ -406,6 +390,7 @@ INT_PTR CALLBACK DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             break;
 
         case UWM_CHILDQUIT:
+            ShowNotificationData(false);
             CleanupThreadHandle();
             break;
 
