@@ -27,3 +27,6 @@
 #include <atlbase.h>
 #include <atlstr.h>
 #include <atlpath.h>
+#include <assert.h>
+
+#include <tlhelp32.h>

@@ -4,6 +4,7 @@
 #include "stdafx.h"
 #include "resource.h"
 #include <assert.h>
+#include "Config.h"
 
 #define TRAYICONID  1//             ID number for the Notify Icon
 #define SWM_TRAYMSG WM_APP//        the message ID sent to our window
@@ -16,6 +17,11 @@
 #define UWM_UPDATEINFO    (WM_USER + 4)
 #define UWM_CHILDQUIT    (WM_USER + 5)
 
+
+using namespace ATL;
+
+CConfig config;
+
 // Global Variables:
 HINSTANCE       hInst;  // current instance
 NOTIFYICONDATA  niData; // notify icon data
@@ -26,13 +32,10 @@ BOOL                OnInitDialog(HWND hWnd);
 void                ShowContextMenu(HWND hWnd);
 ULONGLONG           GetDllVersion(LPCTSTR lpszDllName);
 
-STARTUPINFO si;
-PROCESS_INFORMATION pi;
 CString infoString;
 CString cmdLine;
-
+HANDLE job;
 HANDLE hWaitProcessStartEvent = NULL;
-
 HANDLE hProcessStartThread = NULL;
 
 void CleanupThreadHandle()
@@ -50,10 +53,14 @@ DWORD WINAPI ProcessHostThreadFunc(LPVOID lpParam)
 {
     using namespace ATL;
     using namespace ATLPath;
+    STARTUPINFO si;
+    PROCESS_INFORMATION pi;
     ZeroMemory(&si, sizeof(si));
     ZeroMemory(&pi, sizeof(pi));
     LPWSTR cmd = cmdLine.GetBuffer();
     BOOL succeeded;
+    job = CreateJobObject(NULL, NULL);
+    assert(job != NULL);
 
     if (cmdLine.IsEmpty())
     {
@@ -86,12 +93,14 @@ DWORD WINAPI ProcessHostThreadFunc(LPVOID lpParam)
         return 1;
     }
 
+    succeeded = AssignProcessToJobObject(job, pi.hProcess);
+    assert(succeeded);
     infoString.Format(L"Process Running (%d).\n", pi.dwProcessId);
     succeeded = PostMessage(hDlg, UWM_UPDATEINFO, NULL, NULL);
     assert(succeeded);
     succeeded = SetEvent(hWaitProcessStartEvent);
     assert(succeeded);
-    DWORD id = WaitForSingleObject(pi.hProcess, INFINITE);
+    DWORD id = WaitForSingleObject(job, INFINITE);
     assert(id == WAIT_OBJECT_0);
     infoString.Format(L"Process Exited (%d).\n", pi.dwProcessId);
     succeeded = PostMessage(hDlg, UWM_UPDATEINFO, NULL, NULL);
@@ -99,6 +108,8 @@ DWORD WINAPI ProcessHostThreadFunc(LPVOID lpParam)
     succeeded = CloseHandle(pi.hProcess);
     assert(succeeded);
     succeeded = CloseHandle(pi.hThread);
+    assert(succeeded);
+    succeeded = CloseHandle(job);
     assert(succeeded);
     ZeroMemory(&si, sizeof(si));
     ZeroMemory(&pi, sizeof(pi));
@@ -147,7 +158,7 @@ void StopProcess()
 {
     if (hProcessStartThread != NULL)
     {
-        BOOL succeeded = TerminateProcess(pi.hProcess, 0);
+        BOOL succeeded = TerminateJobObject(job, -1);
         assert(succeeded);
         CleanupThreadHandle();
     }
@@ -155,6 +166,15 @@ void StopProcess()
 
 INT_PTR CALLBACK    DlgProc(HWND, UINT, WPARAM, LPARAM);
 LRESULT CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
+
+void BuildCmdLine()
+{
+    const CPath *appPath = config.GetAppPath();
+    const CString *args = config.GetAppArgs();
+    cmdLine = static_cast<CString>(*appPath);
+    cmdLine.AppendChar(L' ');
+    cmdLine.Append(*args);
+}
 
 int APIENTRY _tWinMain(
     HINSTANCE hInstance,
@@ -164,17 +184,8 @@ int APIENTRY _tWinMain(
 {
     MSG msg;
     HACCEL hAccelTable;
-    LPCWSTR cmd = GetCommandLine();
-    int argc;
-    LPWSTR *argv = CommandLineToArgvW(cmd, &argc);
-    cmdLine.Empty();
-
-    for (int i = 1; i < argc; i++)
-    {
-        cmdLine.Append(argv[i]);
-        cmdLine.AppendChar(L' ');
-    }
-
+    config.Initialize();
+    BuildCmdLine();
     hWaitProcessStartEvent = CreateEvent(
                                  NULL,
                                  FALSE,
@@ -209,11 +220,6 @@ int APIENTRY _tWinMain(
 //  Initialize the window and tray icon
 BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
-    WCHAR name[MAX_PATH];
-    BOOL succeeded;
-    succeeded = GetModuleFileName(NULL, name, MAX_PATH);
-    assert(succeeded);
-    CPath path = name;
     // prepare for XP style controls
     InitCommonControls();
     // store instance handle and create dialog
@@ -245,14 +251,12 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
         niData.cbSize = NOTIFYICONDATA_V2_SIZE;
     }
 
-    CPath imagePath = path;
-    imagePath.RemoveFileSpec();
-    imagePath.Append(L"image.ico");
+    const CPath *imagePath = config.GetIconPath();
     niData.uID = TRAYICONID;
     niData.uFlags = NIF_ICON | NIF_MESSAGE | NIF_TIP;
     niData.hIcon = (HICON)LoadImage(
                        NULL,
-                       imagePath,
+                       *imagePath,
                        IMAGE_ICON,
                        GetSystemMetrics(SM_CXSMICON),
                        GetSystemMetrics(SM_CYSMICON),
@@ -280,14 +284,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
 BOOL OnInitDialog(HWND hWnd)
 {
-    WCHAR name[MAX_PATH];
-    BOOL succeeded;
-    succeeded = GetModuleFileName(NULL, name, MAX_PATH);
-    assert(succeeded);
-    CPath path = name;
-    CPath imagePath = path;
-    imagePath.RemoveFileSpec();
-    imagePath.Append(L"image.ico");
+    const CPath *imagePath = config.GetIconPath();
     HMENU hMenu = GetSystemMenu(hWnd, FALSE);
 
     if (hMenu)
@@ -298,7 +295,7 @@ BOOL OnInitDialog(HWND hWnd)
 
     HICON hIcon = (HICON)LoadImage(
                       NULL,
-                      imagePath,
+                      *imagePath,
                       IMAGE_ICON,
                       GetSystemMetrics(SM_CXSMICON),
                       GetSystemMetrics(SM_CYSMICON),
@@ -469,6 +466,7 @@ INT_PTR CALLBACK DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         case WM_DESTROY:
             niData.uFlags = 0;
             Shell_NotifyIcon(NIM_DELETE, &niData);
+            StopProcess();
             PostQuitMessage(0);
             break;
     }
