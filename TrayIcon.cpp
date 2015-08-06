@@ -246,7 +246,7 @@ int APIENTRY _tWinMain(
     // Main message loop:
     while (GetMessage(&msg, NULL, 0, 0))
     {
-        if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg) &&
+        if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg) ||
                 !IsDialogMessage(msg.hwnd, &msg))
         {
             TranslateMessage(&msg);
@@ -418,15 +418,14 @@ INT_PTR CALLBACK DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     break;
 
                 case SWM_HIDE:
-                case IDOK:
                     ShowWindow(hWnd, SW_HIDE);
                     break;
 
-                case IDSTART:
+                case IDC_START:
                     StartProcess();
                     break;
 
-                case IDSTOP:
+                case IDC_STOP:
                     StopProcess();
                     break;
 
