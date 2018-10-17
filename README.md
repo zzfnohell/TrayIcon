@@ -1,2 +1,2 @@
 # TrayIcon
-Run a program as a background task.
+Run a windows program as a background task.
