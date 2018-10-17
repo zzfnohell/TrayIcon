@@ -101,7 +101,7 @@ void StartProcess()
     if (cmdLine.IsEmpty())
     {
         sMsg.Format(L"Command line is emtpy (%d).\n", GetLastError());
-        succeeded = PostMessage(hDlg, UWM_UPDATEINFO, NULL,reinterpret_cast<LPARAM>(&sMsg));
+        succeeded = PostMessage(hDlg, UWM_UPDATEINFO, NULL, reinterpret_cast<LPARAM>(&sMsg));
         assert(succeeded);
         return;
     }
@@ -141,7 +141,7 @@ void StartProcess()
     {
         succeeded = CloseHandle(hJobObject);
         assert(succeeded);
-        sMsg.Format(L"CreateProcess failed (%d).\n", GetLastError()); 
+        sMsg.Format(L"CreateProcess failed (%d).\n", GetLastError());
         succeeded = PostMessage(hDlg, UWM_UPDATEINFO, NULL, reinterpret_cast<LPARAM>(&sMsg));
         assert(succeeded);
         return;
@@ -327,7 +327,7 @@ void ShowContextMenu(HWND hWnd)
 
 void UpdateInfoText(LPCWSTR s)
 {
-    HWND wnd = GetDlgItem(hDlg, IDC_STATIC_INFO); 
+    HWND wnd = GetDlgItem(hDlg, IDC_STATIC_INFO);
     SetWindowText(wnd, s);
 }
 
@@ -335,7 +335,7 @@ void UpdateInfoText(LPCWSTR s)
 INT_PTR CALLBACK DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     int wmId, wmEvent;
-    BOOL succeeded;
+
     switch (message)
     {
     case SWM_TRAYMSG:
@@ -427,11 +427,11 @@ INT_PTR CALLBACK DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         break;
 
     case WM_DESTROY:
+        ShowNotificationData(false);
         niData.uFlags = 0;
         Shell_NotifyIcon(NIM_DELETE, &niData);
         StopProcess();
-        hJob = NULL; 
-        ShowNotificationData(false);
+        hJob = NULL;
         PostQuitMessage(0);
         break;
     }
