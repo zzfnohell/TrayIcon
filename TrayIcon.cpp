@@ -165,7 +165,7 @@ void StartProcess()
 
 
     sMsg.Format(L"Process Running (%d).\n", pi.dwProcessId);
-    succeeded = PostMessage(hDlg, UWM_UPDATEINFO, NULL, NULL);
+    succeeded = PostMessage(hDlg, UWM_UPDATEINFO, NULL, reinterpret_cast<LPARAM>(&sMsg));
     assert(succeeded);
 
     succeeded = RegisterWaitForSingleObject(&hNewWaitHandle, pi.hProcess, WaitOrTimerCallback, hJobObject, INFINITE, WT_EXECUTEONLYONCE);
