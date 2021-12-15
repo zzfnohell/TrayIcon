@@ -1,7 +1,5 @@
 #include "stdafx.h"
-#include "Config.h"
-
-using namespace ATL;
+#include "config.h"
 
 #define BUFFER_SIZE 2048
 #define SECTION_UI L"UI"
@@ -17,13 +15,7 @@ using namespace ATL;
 #define KEY_APP_ARGS L"Args"
 #define KEY_APP_ARGS_DEFAULT NULL
 
-CConfig::CConfig()
-    : m_ModuleDirectory(),
-      m_IniPath(),
-      m_OnIconPath(),
-      m_OffIconPath(),
-      m_AppPath(),
-      m_AppArgs()
+CConfig::CConfig(): m_ModuleDirectory{0}, m_IniPath{0}, m_OnIconPath{0}, m_OffIconPath{0}, m_AppPath{0}, m_AppArgs{0}
 {
 }
 
@@ -33,87 +25,96 @@ CConfig::~CConfig()
 }
 
 
-void CConfig::Canonicalize(ATL::CPath *path)
+void Canonicalize(WCHAR path[], WCHAR dir[])
 {
-    if (path)
-    {
-        if (path->IsRelative())
-        {
-            CPath tmp = this->m_ModuleDirectory;
-            tmp.Append(*path);
-            *path = tmp;
-        }
+	WCHAR tmp[MAX_PATH];
+	if (PathIsRelative(path))
+	{
+		PathCombine(tmp, dir, path);
+	}
+	else
+	{ 
+		wcscpy_s(tmp, path);
+	}
 
-        path->Canonicalize();
-    }
+	PathCanonicalize(path, tmp);
 }
 
 void CConfig::Initialize()
 {
-    CPath::XCHAR path[MAX_PATH];
-    WCHAR buffer[BUFFER_SIZE];
-    DWORD size = GetModuleFileName(NULL, path, MAX_PATH);
-    assert(size > 0);
-    m_IniPath = path;
-    m_IniPath.RemoveExtension();
-    m_IniPath.AddExtension(L".ini");
-    m_ModuleDirectory = path;
-    m_ModuleDirectory.RemoveFileSpec();
-    GetPrivateProfileString(
-        SECTION_UI,
-        KEY_UI_ONIMAGE,
-        KEY_UI_ONIMAGE_DEFAULT,
-        buffer,
-        BUFFER_SIZE, m_IniPath);
-    m_OnIconPath = buffer;
-    Canonicalize(&m_OnIconPath);
-    GetPrivateProfileString(
-        SECTION_UI,
-        KEY_UI_OFFIMAGE,
-        KEY_UI_OFFIMAGE_DEFAULT,
-        buffer,
-        BUFFER_SIZE, m_IniPath);
-    m_OffIconPath = buffer;
-    Canonicalize(&m_OffIconPath);
-    GetPrivateProfileString(
-        SECTION_APP,
-        KEY_APP_PATH,
-        KEY_APP_PATH_DEFAULT,
-        buffer,
-        BUFFER_SIZE,
-        m_IniPath);
-    m_AppPath = buffer;
-    GetPrivateProfileString(
-        SECTION_APP,
-        KEY_APP_ARGS,
-        KEY_APP_ARGS_DEFAULT,
-        buffer,
-        BUFFER_SIZE,
-        m_IniPath);
-    m_AppArgs = buffer;
+	WCHAR buffer[BUFFER_SIZE];
+	const DWORD size = GetModuleFileName(NULL, m_ModuleDirectory, MAX_PATH);
+	assert(size > 0);
+	wcscpy_s(m_IniPath, m_ModuleDirectory);
+
+	PathRemoveExtension(m_IniPath);
+	PathAddExtension(m_IniPath, L".ini");
+
+	PathRemoveFileSpec(m_ModuleDirectory);
+
+	GetPrivateProfileString(
+		SECTION_UI,
+		KEY_UI_ONIMAGE,
+		KEY_UI_ONIMAGE_DEFAULT,
+		buffer,
+		BUFFER_SIZE, m_IniPath);
+
+	wcscpy_s(m_OnIconPath, buffer);
+	Canonicalize(m_OnIconPath, m_ModuleDirectory);
+
+	GetPrivateProfileString(
+		SECTION_UI,
+		KEY_UI_OFFIMAGE,
+		KEY_UI_OFFIMAGE_DEFAULT,
+		buffer,
+		BUFFER_SIZE, m_IniPath);
+
+	wcscpy_s(m_OffIconPath, buffer);
+	Canonicalize(m_OffIconPath, m_ModuleDirectory);
+
+	GetPrivateProfileString(
+		SECTION_APP,
+		KEY_APP_PATH,
+		KEY_APP_PATH_DEFAULT,
+		buffer,
+		BUFFER_SIZE,
+		m_IniPath);
+
+	wcscpy_s(m_AppPath, buffer);
+	Canonicalize(m_AppPath, m_ModuleDirectory);
+
+	GetPrivateProfileString(
+		SECTION_APP,
+		KEY_APP_ARGS,
+		KEY_APP_ARGS_DEFAULT,
+		buffer,
+		BUFFER_SIZE,
+		m_IniPath);
+
+	wcscpy_s(m_AppArgs, buffer);
 }
 
-const ATL::CPath *CConfig::GetModuleDirectory() const\
+LPCWSTR CConfig::GetModuleDirectory() const
 {
-    return &m_ModuleDirectory;
+	return m_ModuleDirectory;
 }
 
-const ATL::CPath *CConfig::GetOnIconPath() const
+LPCWSTR CConfig::GetOnIconPath() const
 {
-    return &m_OnIconPath;
+	return m_OnIconPath;
 }
 
-const ATL::CPath *CConfig::GetOffIconPath() const
+LPCWSTR CConfig::GetOffIconPath() const
 {
-    return &m_OffIconPath;
+	return m_OffIconPath;
 }
 
-const ATL::CPath *CConfig::GetAppPath() const
+LPCWSTR CConfig::GetAppPath() const
 {
-    return &m_AppPath;
+	return m_AppPath;
 }
 
-const ATL::CString *CConfig::GetAppArgs() const
+LPCWSTR CConfig::GetAppArgs() const
 {
-    return &m_AppArgs;
+	return m_AppArgs;
 }
