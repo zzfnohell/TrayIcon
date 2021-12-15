@@ -14,8 +14,9 @@
 #define KEY_APP_PATH_DEFAULT NULL
 #define KEY_APP_ARGS L"Args"
 #define KEY_APP_ARGS_DEFAULT NULL
+#define KEY_APP_WORKDIR_PATH L"WorkDir"
 
-CConfig::CConfig(): m_ModuleDirectory{0}, m_IniPath{0}, m_OnIconPath{0}, m_OffIconPath{0}, m_AppPath{0}, m_AppArgs{0}
+CConfig::CConfig() : m_ModuleDirectory{ 0 }, m_IniPath{ 0 }, m_OnIconPath{ 0 }, m_OffIconPath{ 0 }, m_AppPath{ 0 }, m_AppArgs{ 0 }
 {
 }
 
@@ -33,11 +34,12 @@ void Canonicalize(WCHAR path[], WCHAR dir[])
 		PathCombine(tmp, dir, path);
 	}
 	else
-	{ 
+	{
 		wcscpy_s(tmp, path);
 	}
 
-	PathCanonicalize(path, tmp);
+	const auto suc = PathCanonicalize(path, tmp);
+	assert(suc);
 }
 
 void CConfig::Initialize()
@@ -83,6 +85,18 @@ void CConfig::Initialize()
 	wcscpy_s(m_AppPath, buffer);
 	Canonicalize(m_AppPath, m_ModuleDirectory);
 
+
+	GetPrivateProfileString(
+		SECTION_APP,
+		KEY_APP_WORKDIR_PATH,
+		NULL,
+		buffer,
+		BUFFER_SIZE,
+		m_IniPath);
+
+	wcscpy_s(m_WorkDirPath, buffer);
+	Canonicalize(m_WorkDirPath, m_ModuleDirectory);
+
 	GetPrivateProfileString(
 		SECTION_APP,
 		KEY_APP_ARGS,
@@ -117,4 +131,10 @@ LPCWSTR CConfig::GetAppPath() const
 LPCWSTR CConfig::GetAppArgs() const
 {
 	return m_AppArgs;
+}
+
+
+LPCWSTR CConfig::GetWorkDirPath() const
+{
+	return m_WorkDirPath;
 }

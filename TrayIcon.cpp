@@ -112,6 +112,7 @@ void StartProcess()
 	si.cb = sizeof(si);
 	si.dwFlags = STARTF_USESHOWWINDOW;
 	si.wShowWindow = SW_HIDE;
+	const auto startup_dir = config.GetWorkDirPath();
 	succeeded = CreateProcess(
 		NULL,   // No module name (use command line)
 		kCmdLine,        // Command line
@@ -120,7 +121,7 @@ void StartProcess()
 		TRUE,          // Set handle inheritance to FALSE
 		0,              // No creation flags
 		NULL,           // Use parent's environment block
-		NULL,           // Use parent's starting directory
+		startup_dir,           // Use parent's starting directory
 		&si,            // Pointer to STARTUPINFO structure
 		&pi           // Pointer to PROCESS_INFORMATION structure
 	);
