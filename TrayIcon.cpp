@@ -19,26 +19,27 @@
 CConfig config{};
 
 // Global Variables:
-HINSTANCE       kInst;  // current instance
+HINSTANCE kInst; // current instance
 
-NOTIFYICONDATA  kData;
+NOTIFYICONDATA kData;
 
 HWND kDlg;
 // Forward declarations of functions included in this code module:
-static BOOL                InitInstance(HINSTANCE, int);
-static BOOL                OnInitDialog(HWND hWnd);
-static void                ShowContextMenu(HWND hWnd);
+static BOOL InitInstance(HINSTANCE, int);
+static BOOL OnInitDialog(HWND hWnd);
+static void ShowContextMenu(HWND hWnd);
 
-TCHAR kMsg[MAX_PATH] = { 0 };
-TCHAR kCmdLine[MAX_PATH] = { 0 };
+TCHAR kMsg[MAX_PATH] = {0};
+TCHAR kCmdLine[MAX_PATH] = {0};
 
 HANDLE hJob;
 HANDLE hNewWaitHandle;
 bool createJob = false;
 
-VOID CALLBACK WaitOrTimerCallback(_In_  PVOID lpParameter, _In_  BOOLEAN TimerOrWaitFired)
+VOID CALLBACK WaitOrTimerCallback(_In_ PVOID lpParameter, _In_ BOOLEAN TimerOrWaitFired)
 {
-	if (!TimerOrWaitFired) {
+	if (!TimerOrWaitFired)
+	{
 		const BOOL succeeded = PostMessage(kDlg, UWM_CHILDQUIT, NULL, NULL);
 		assert(succeeded);
 	}
@@ -97,10 +98,11 @@ void StartProcess()
 	HANDLE hJobObject = CreateJobObject(NULL, NULL);
 	assert(hJobObject != NULL);
 
-	JOBOBJECT_EXTENDED_LIMIT_INFORMATION jeli = { 0 };
+	JOBOBJECT_EXTENDED_LIMIT_INFORMATION jeli = {0};
 	jeli.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
 	succeeded = SetInformationJobObject(hJobObject, JobObjectExtendedLimitInformation, &jeli, sizeof(jeli));
-	if (succeeded == 0) {
+	if (succeeded == 0)
+	{
 		succeeded = CloseHandle(hJobObject);
 		assert(succeeded);
 		swprintf_s(kMsg, L"Create Job failed (%d).\n", GetLastError());
@@ -114,16 +116,16 @@ void StartProcess()
 	si.wShowWindow = SW_HIDE;
 	const auto startup_dir = config.GetWorkDirPath();
 	succeeded = CreateProcess(
-		NULL,   // No module name (use command line)
-		kCmdLine,        // Command line
-		NULL,           // Process handle not inheritable
-		NULL,           // Thread handle not inheritable
-		TRUE,          // Set handle inheritance to FALSE
-		0,              // No creation flags
-		NULL,           // Use parent's environment block
-		startup_dir,           // Use parent's starting directory
-		&si,            // Pointer to STARTUPINFO structure
-		&pi           // Pointer to PROCESS_INFORMATION structure
+		NULL, // No module name (use command line)
+		kCmdLine, // Command line
+		NULL, // Process handle not inheritable
+		NULL, // Thread handle not inheritable
+		TRUE, // Set handle inheritance to FALSE
+		0, // No creation flags
+		NULL, // Use parent's environment block
+		startup_dir, // Use parent's starting directory
+		&si, // Pointer to STARTUPINFO structure
+		&pi // Pointer to PROCESS_INFORMATION structure
 	);
 
 	if (!succeeded)
@@ -156,7 +158,8 @@ void StartProcess()
 	succeeded = PostMessage(kDlg, UWM_UPDATEINFO, NULL, reinterpret_cast<LPARAM>(kMsg));
 	assert(succeeded);
 
-	succeeded = RegisterWaitForSingleObject(&hNewWaitHandle, pi.hProcess, WaitOrTimerCallback, hJobObject, INFINITE, WT_EXECUTEONLYONCE);
+	succeeded = RegisterWaitForSingleObject(&hNewWaitHandle, pi.hProcess, WaitOrTimerCallback, hJobObject, INFINITE,
+	                                        WT_EXECUTEONLYONCE);
 	assert(succeeded);
 }
 
@@ -172,8 +175,8 @@ void StopProcess()
 	}
 }
 
-INT_PTR CALLBACK    DlgProc(HWND, UINT, WPARAM, LPARAM);
-LRESULT CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
+INT_PTR CALLBACK DlgProc(HWND, UINT, WPARAM, LPARAM);
+LRESULT CALLBACK About(HWND, UINT, WPARAM, LPARAM);
 
 void BuildCmdLine()
 {
@@ -185,8 +188,8 @@ void BuildCmdLine()
 int APIENTRY _tWinMain(
 	HINSTANCE hInstance,
 	HINSTANCE hPrevInstance,
-	LPTSTR    lpCmdLine,
-	int       nCmdShow)
+	LPTSTR lpCmdLine,
+	int nCmdShow)
 {
 	MSG msg;
 	HACCEL hAccelTable;
@@ -340,7 +343,8 @@ INT_PTR CALLBACK DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		break;
 
 	case UWM_CHILDQUIT:
-		if (hJob) {
+		if (hJob)
+		{
 			CloseHandle(hJob);
 			hJob = NULL;
 		}
@@ -380,7 +384,8 @@ INT_PTR CALLBACK DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			break;
 
 		case IDC_START:
-			if (!hJob) {
+			if (!hJob)
+			{
 				StartProcess();
 			}
 			break;

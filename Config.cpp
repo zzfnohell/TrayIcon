@@ -16,19 +16,15 @@
 #define KEY_APP_ARGS_DEFAULT NULL
 #define KEY_APP_WORKDIR_PATH L"WorkDir"
 
-CConfig::CConfig() : m_ModuleDirectory{ 0 }, m_IniPath{ 0 }, m_OnIconPath{ 0 }, m_OffIconPath{ 0 }, m_AppPath{ 0 }, m_AppArgs{ 0 }
-{
-}
-
-
-CConfig::~CConfig()
+CConfig::CConfig() : m_ModuleDirectory{0}, m_IniPath{0}, m_OnIconPath{0}, m_OffIconPath{0}, m_AppPath{0},
+                     m_WorkDirPath{0}, m_AppArgs{0}
 {
 }
 
 
 void Canonicalize(WCHAR path[], WCHAR dir[])
 {
-	WCHAR tmp[MAX_PATH];
+	WCHAR tmp[MAX_PATH] = { 0 };
 	if (PathIsRelative(path))
 	{
 		PathCombine(tmp, dir, path);
@@ -38,14 +34,14 @@ void Canonicalize(WCHAR path[], WCHAR dir[])
 		wcscpy_s(tmp, path);
 	}
 
-	const auto suc = PathCanonicalize(path, tmp);
+	[[maybe_unused]] const auto suc = PathCanonicalize(path, tmp);
 	assert(suc);
 }
 
 void CConfig::Initialize()
 {
 	WCHAR buffer[BUFFER_SIZE];
-	const DWORD size = GetModuleFileName(NULL, m_ModuleDirectory, MAX_PATH);
+	[[maybe_unused]] const DWORD size = GetModuleFileName(NULL, m_ModuleDirectory, MAX_PATH);
 	assert(size > 0);
 	wcscpy_s(m_IniPath, m_ModuleDirectory);
 

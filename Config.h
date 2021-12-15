@@ -1,19 +1,19 @@
 #pragma once
- 
+
 class CConfig
 {
 public:
 	CConfig();
-	virtual ~CConfig();
+	virtual ~CConfig() = default;
 
 	void Initialize();
 
-	LPCWSTR GetModuleDirectory() const;
-	LPCWSTR GetOnIconPath() const;
-	LPCWSTR GetOffIconPath() const;
-	LPCWSTR GetAppPath() const;
-	LPCWSTR GetAppArgs() const;
-	LPCWSTR GetWorkDirPath() const;
+	[[nodiscard]] LPCWSTR GetModuleDirectory() const;
+	[[nodiscard]] LPCWSTR GetOnIconPath() const;
+	[[nodiscard]] LPCWSTR GetOffIconPath() const;
+	[[nodiscard]] LPCWSTR GetAppPath() const;
+	[[nodiscard]] LPCWSTR GetAppArgs() const;
+	[[nodiscard]] LPCWSTR GetWorkDirPath() const;
 private:
 	WCHAR m_ModuleDirectory[MAX_PATH];
 	WCHAR m_IniPath[MAX_PATH];
@@ -23,4 +23,3 @@ private:
 	WCHAR m_WorkDirPath[MAX_PATH];
 	WCHAR m_AppArgs[MAX_PATH];
 };
-
