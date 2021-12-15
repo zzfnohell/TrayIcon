@@ -19,11 +19,11 @@
 CConfig config{};
 
 // Global Variables:
-HINSTANCE       hInst;  // current instance
+HINSTANCE       kInst;  // current instance
 
-NOTIFYICONDATA  niData;
+NOTIFYICONDATA  kData;
 
-HWND hDlg;
+HWND kDlg;
 // Forward declarations of functions included in this code module:
 static BOOL                InitInstance(HINSTANCE, int);
 static BOOL                OnInitDialog(HWND hWnd);
@@ -39,7 +39,7 @@ bool createJob = false;
 VOID CALLBACK WaitOrTimerCallback(_In_  PVOID lpParameter, _In_  BOOLEAN TimerOrWaitFired)
 {
 	if (!TimerOrWaitFired) {
-		const BOOL succeeded = PostMessage(hDlg, UWM_CHILDQUIT, NULL, NULL);
+		const BOOL succeeded = PostMessage(kDlg, UWM_CHILDQUIT, NULL, NULL);
 		assert(succeeded);
 	}
 
@@ -48,13 +48,13 @@ VOID CALLBACK WaitOrTimerCallback(_In_  PVOID lpParameter, _In_  BOOLEAN TimerOr
 
 void InitializeNotificationData()
 {
-	ZeroMemory(&niData, sizeof(NOTIFYICONDATA));
-	niData.cbSize = sizeof(NOTIFYICONDATA);
-	niData.uID = 100;
-	niData.uFlags = NIF_ICON | NIF_MESSAGE;
-	niData.hWnd = hDlg;
-	niData.uCallbackMessage = SWM_TRAYMSG;
-	niData.uVersion = NOTIFYICON_VERSION_4;
+	ZeroMemory(&kData, sizeof(NOTIFYICONDATA));
+	kData.cbSize = sizeof(NOTIFYICONDATA);
+	kData.uID = 100;
+	kData.uFlags = NIF_ICON | NIF_MESSAGE;
+	kData.hWnd = kDlg;
+	kData.uCallbackMessage = SWM_TRAYMSG;
+	kData.uVersion = NOTIFYICON_VERSION_4;
 }
 
 void ShowNotificationData(bool on)
@@ -72,8 +72,8 @@ void ShowNotificationData(bool on)
 		GetSystemMetrics(SM_CYSMICON),
 		flags);
 	nid.hIcon = icon;
-	nid.uID = niData.uID;
-	nid.hWnd = niData.hWnd;
+	nid.uID = kData.uID;
+	nid.hWnd = kData.hWnd;
 	nid.uFlags = NIF_ICON;
 	Shell_NotifyIcon(NIM_MODIFY, &nid);
 	DestroyIcon(icon);
@@ -90,7 +90,7 @@ void StartProcess()
 	if (!(*kCmdLine))
 	{
 		swprintf_s(kMsg, L"Command line is emtpy (%d).\n", GetLastError());
-		succeeded = PostMessage(hDlg, UWM_UPDATEINFO, NULL, reinterpret_cast<LPARAM>(kMsg));
+		succeeded = PostMessage(kDlg, UWM_UPDATEINFO, NULL, reinterpret_cast<LPARAM>(kMsg));
 		assert(succeeded);
 		return;
 	}
@@ -104,7 +104,7 @@ void StartProcess()
 		succeeded = CloseHandle(hJobObject);
 		assert(succeeded);
 		swprintf_s(kMsg, L"Create Job failed (%d).\n", GetLastError());
-		succeeded = PostMessage(hDlg, UWM_UPDATEINFO, NULL, reinterpret_cast<LPARAM>(kMsg));
+		succeeded = PostMessage(kDlg, UWM_UPDATEINFO, NULL, reinterpret_cast<LPARAM>(kMsg));
 		assert(succeeded);
 		return;
 	}
@@ -131,7 +131,7 @@ void StartProcess()
 		succeeded = CloseHandle(hJobObject);
 		assert(succeeded);
 		wsprintf(kMsg, L"CreateProcess failed (%d).\n", GetLastError());
-		succeeded = PostMessage(hDlg, UWM_UPDATEINFO, NULL, reinterpret_cast<LPARAM>(kMsg));
+		succeeded = PostMessage(kDlg, UWM_UPDATEINFO, NULL, reinterpret_cast<LPARAM>(kMsg));
 		assert(succeeded);
 		return;
 	}
@@ -144,16 +144,16 @@ void StartProcess()
 		assert(succeeded);
 		succeeded = CloseHandle(hJobObject);
 		assert(succeeded);
-		succeeded = PostMessage(hDlg, UWM_UPDATEINFO, NULL, reinterpret_cast<LPARAM>(kMsg));
+		succeeded = PostMessage(kDlg, UWM_UPDATEINFO, NULL, reinterpret_cast<LPARAM>(kMsg));
 		assert(succeeded);
 		return;
 	}
 
-	succeeded = PostMessage(hDlg, UWM_CHILDCREATE, NULL, reinterpret_cast<LPARAM>(hJobObject));
+	succeeded = PostMessage(kDlg, UWM_CHILDCREATE, NULL, reinterpret_cast<LPARAM>(hJobObject));
 	assert(succeeded);
 
 	wsprintf(kMsg, L"Process Running (%d).\n", pi.dwProcessId);
-	succeeded = PostMessage(hDlg, UWM_UPDATEINFO, NULL, reinterpret_cast<LPARAM>(kMsg));
+	succeeded = PostMessage(kDlg, UWM_UPDATEINFO, NULL, reinterpret_cast<LPARAM>(kMsg));
 	assert(succeeded);
 
 	succeeded = RegisterWaitForSingleObject(&hNewWaitHandle, pi.hProcess, WaitOrTimerCallback, hJobObject, INFINITE, WT_EXECUTEONLYONCE);
@@ -221,21 +221,21 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	// prepare for XP style controls
 	InitCommonControls();
 	// store instance handle and create dialog
-	hInst = hInstance;
-	hDlg = CreateDialog(
+	kInst = hInstance;
+	kDlg = CreateDialog(
 		hInstance,
 		MAKEINTRESOURCE(IDD_DLG_DIALOG),
 		NULL,
 		(DLGPROC)DlgProc);
 
-	if (!hDlg)
+	if (!kDlg)
 	{
 		return FALSE;
 	}
 
 	InitializeNotificationData();
 	const auto image_path = config.GetOffIconPath();
-	const UINT flags = LR_LOADFROMFILE;
+	constexpr UINT flags = LR_LOADFROMFILE;
 	const auto icon = (HICON)LoadImage(
 		NULL,
 		image_path,
@@ -243,10 +243,10 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 		GetSystemMetrics(SM_CXSMICON),
 		GetSystemMetrics(SM_CYSMICON),
 		flags);
-	niData.hIcon = icon;
-	Shell_NotifyIcon(NIM_ADD, &niData);
+	kData.hIcon = icon;
+	Shell_NotifyIcon(NIM_ADD, &kData);
 	DestroyIcon(icon);
-	niData.hIcon = NULL;
+	kData.hIcon = NULL;
 	StartProcess();
 	return TRUE;
 }
@@ -254,9 +254,8 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 BOOL OnInitDialog(HWND hWnd)
 {
 	const auto image_path = config.GetOffIconPath();
-	const HMENU hMenu = GetSystemMenu(hWnd, FALSE);
 
-	if (hMenu)
+	if (const HMENU hMenu = GetSystemMenu(hWnd, FALSE))
 	{
 		AppendMenu(hMenu, MF_SEPARATOR, 0, NULL);
 		AppendMenu(hMenu, MF_STRING, IDM_ABOUT, _T("About"));
@@ -280,9 +279,8 @@ void ShowContextMenu(HWND hWnd)
 {
 	POINT pt;
 	GetCursorPos(&pt);
-	const HMENU hMenu = CreatePopupMenu();
 
-	if (hMenu)
+	if (const HMENU hMenu = CreatePopupMenu())
 	{
 		if (IsWindowVisible(hWnd))
 		{
@@ -311,7 +309,7 @@ void ShowContextMenu(HWND hWnd)
 
 void UpdateInfoText(LPCWSTR s)
 {
-	const HWND wnd = GetDlgItem(hDlg, IDC_STATIC_INFO);
+	HWND wnd = GetDlgItem(kDlg, IDC_STATIC_INFO);
 	SetWindowText(wnd, s);
 }
 
@@ -362,7 +360,7 @@ INT_PTR CALLBACK DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		}
 		else if (wParam == IDM_ABOUT)
 		{
-			DialogBox(hInst, (LPCTSTR)IDD_ABOUTBOX, hWnd, (DLGPROC)About);
+			DialogBox(kInst, (LPCTSTR)IDD_ABOUTBOX, hWnd, (DLGPROC)About);
 		}
 
 		break;
@@ -397,7 +395,9 @@ INT_PTR CALLBACK DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			break;
 
 		case IDM_ABOUT:
-			DialogBox(hInst, (LPCTSTR)IDD_ABOUTBOX, hWnd, (DLGPROC)About);
+			DialogBox(kInst, (LPCTSTR)IDD_ABOUTBOX, hWnd, (DLGPROC)About);
+			break;
+		default:
 			break;
 		}
 
@@ -412,8 +412,8 @@ INT_PTR CALLBACK DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 	case WM_DESTROY:
 		ShowNotificationData(false);
-		niData.uFlags = 0;
-		Shell_NotifyIcon(NIM_DELETE, &niData);
+		kData.uFlags = 0;
+		Shell_NotifyIcon(NIM_DELETE, &kData);
 		StopProcess();
 		hJob = NULL;
 		PostQuitMessage(0);
