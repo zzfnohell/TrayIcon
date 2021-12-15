@@ -29,8 +29,8 @@ static BOOL InitInstance(HINSTANCE, int);
 static BOOL OnInitDialog(HWND hWnd);
 static void ShowContextMenu(HWND hWnd);
 
-TCHAR kMsg[MAX_PATH] = {0};
-TCHAR kCmdLine[MAX_PATH] = {0};
+TCHAR kMsg[MAX_PATH] = { 0 };
+TCHAR kCmdLine[MAX_PATH] = { 0 };
 
 HANDLE hJob;
 HANDLE hNewWaitHandle;
@@ -40,7 +40,7 @@ VOID CALLBACK WaitOrTimerCallback(_In_ PVOID lpParameter, _In_ BOOLEAN TimerOrWa
 {
 	if (!TimerOrWaitFired)
 	{
-		const BOOL succeeded = PostMessage(kDlg, UWM_CHILDQUIT, NULL, NULL);
+		[[maybe_unused]] const BOOL succeeded = PostMessage(kDlg, UWM_CHILDQUIT, NULL, NULL);
 		assert(succeeded);
 	}
 
@@ -90,7 +90,8 @@ void StartProcess()
 
 	if (!(*kCmdLine))
 	{
-		swprintf_s(kMsg, L"Command line is emtpy (%d).\n", GetLastError());
+		swprintf_s(kMsg, L"Command line is empty (%d).\n", GetLastError());
+		// ReSharper disable once CppAssignedValueIsNeverUsed
 		succeeded = PostMessage(kDlg, UWM_UPDATEINFO, NULL, reinterpret_cast<LPARAM>(kMsg));
 		assert(succeeded);
 		return;
@@ -98,14 +99,18 @@ void StartProcess()
 	HANDLE hJobObject = CreateJobObject(NULL, NULL);
 	assert(hJobObject != NULL);
 
-	JOBOBJECT_EXTENDED_LIMIT_INFORMATION jeli = {0};
+	JOBOBJECT_EXTENDED_LIMIT_INFORMATION jeli{};
+	memset(&jeli, 0, sizeof(JOBOBJECT_EXTENDED_LIMIT_INFORMATION));
+
 	jeli.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
 	succeeded = SetInformationJobObject(hJobObject, JobObjectExtendedLimitInformation, &jeli, sizeof(jeli));
 	if (succeeded == 0)
 	{
+		// ReSharper disable once CppAssignedValueIsNeverUsed
 		succeeded = CloseHandle(hJobObject);
 		assert(succeeded);
 		swprintf_s(kMsg, L"Create Job failed (%d).\n", GetLastError());
+		// ReSharper disable once CppAssignedValueIsNeverUsed
 		succeeded = PostMessage(kDlg, UWM_UPDATEINFO, NULL, reinterpret_cast<LPARAM>(kMsg));
 		assert(succeeded);
 		return;
@@ -114,6 +119,7 @@ void StartProcess()
 	si.cb = sizeof(si);
 	si.dwFlags = STARTF_USESHOWWINDOW;
 	si.wShowWindow = SW_HIDE;
+
 	const auto startup_dir = config.GetWorkDirPath();
 	succeeded = CreateProcess(
 		NULL, // No module name (use command line)
@@ -130,9 +136,11 @@ void StartProcess()
 
 	if (!succeeded)
 	{
+		// ReSharper disable once CppAssignedValueIsNeverUsed
 		succeeded = CloseHandle(hJobObject);
 		assert(succeeded);
 		wsprintf(kMsg, L"CreateProcess failed (%d).\n", GetLastError());
+		// ReSharper disable once CppAssignedValueIsNeverUsed
 		succeeded = PostMessage(kDlg, UWM_UPDATEINFO, NULL, reinterpret_cast<LPARAM>(kMsg));
 		assert(succeeded);
 		return;
@@ -142,24 +150,30 @@ void StartProcess()
 	if (!succeeded)
 	{
 		wsprintf(kMsg, L"AssignProcessToJobObject failed (%d).\n", GetLastError());
+		// ReSharper disable once CppAssignedValueIsNeverUsed
 		succeeded = CloseHandle(pi.hProcess);
 		assert(succeeded);
+		// ReSharper disable once CppAssignedValueIsNeverUsed
 		succeeded = CloseHandle(hJobObject);
 		assert(succeeded);
+		// ReSharper disable once CppAssignedValueIsNeverUsed
 		succeeded = PostMessage(kDlg, UWM_UPDATEINFO, NULL, reinterpret_cast<LPARAM>(kMsg));
 		assert(succeeded);
 		return;
 	}
 
+	// ReSharper disable once CppAssignedValueIsNeverUsed
 	succeeded = PostMessage(kDlg, UWM_CHILDCREATE, NULL, reinterpret_cast<LPARAM>(hJobObject));
 	assert(succeeded);
 
 	wsprintf(kMsg, L"Process Running (%d).\n", pi.dwProcessId);
+	// ReSharper disable once CppAssignedValueIsNeverUsed
 	succeeded = PostMessage(kDlg, UWM_UPDATEINFO, NULL, reinterpret_cast<LPARAM>(kMsg));
 	assert(succeeded);
 
+	// ReSharper disable once CppAssignedValueIsNeverUsed
 	succeeded = RegisterWaitForSingleObject(&hNewWaitHandle, pi.hProcess, WaitOrTimerCallback, hJobObject, INFINITE,
-	                                        WT_EXECUTEONLYONCE);
+		WT_EXECUTEONLYONCE);
 	assert(succeeded);
 }
 
@@ -167,9 +181,15 @@ void StopProcess()
 {
 	if (hJob)
 	{
-		BOOL succeeded = TerminateJobObject(hJob, -1);
+		// ReSharper disable once CppEntityAssignedButNoRead
+		// ReSharper disable once CppJoinDeclarationAndAssignment
+		BOOL succeeded;
+
+		// ReSharper disable once CppAssignedValueIsNeverUsed
+		succeeded = TerminateJobObject(hJob, -1);
 		assert(succeeded);
 
+		// ReSharper disable once CppAssignedValueIsNeverUsed
 		succeeded = CloseHandle(hJob);
 		assert(succeeded);
 	}
@@ -188,7 +208,7 @@ void BuildCmdLine()
 int APIENTRY _tWinMain(
 	HINSTANCE hInstance,
 	HINSTANCE hPrevInstance,
-	LPTSTR lpCmdLine,
+	LPWSTR lpCmdLine,
 	int nCmdShow)
 {
 	MSG msg;
@@ -258,10 +278,10 @@ BOOL OnInitDialog(HWND hWnd)
 {
 	const auto image_path = config.GetOffIconPath();
 
-	if (const HMENU hMenu = GetSystemMenu(hWnd, FALSE))
+	if (HMENU h_menu = GetSystemMenu(hWnd, FALSE))
 	{
-		AppendMenu(hMenu, MF_SEPARATOR, 0, NULL);
-		AppendMenu(hMenu, MF_STRING, IDM_ABOUT, _T("About"));
+		AppendMenu(h_menu, MF_SEPARATOR, 0, NULL);
+		AppendMenu(h_menu, MF_STRING, IDM_ABOUT, _T("About"));
 	}
 
 	auto hIcon = (HICON)LoadImage(
@@ -283,30 +303,30 @@ void ShowContextMenu(HWND hWnd)
 	POINT pt;
 	GetCursorPos(&pt);
 
-	if (const HMENU hMenu = CreatePopupMenu())
+	if (HMENU h_menu = CreatePopupMenu())
 	{
 		if (IsWindowVisible(hWnd))
 		{
-			InsertMenu(hMenu, -1, MF_BYPOSITION, SWM_HIDE, _T("Hide"));
+			InsertMenu(h_menu, -1, MF_BYPOSITION, SWM_HIDE, _T("Hide"));
 		}
 		else
 		{
-			InsertMenu(hMenu, -1, MF_BYPOSITION, SWM_SHOW, _T("Show"));
+			InsertMenu(h_menu, -1, MF_BYPOSITION, SWM_SHOW, _T("Show"));
 		}
 
-		InsertMenu(hMenu, -1, MF_BYPOSITION, SWM_EXIT, _T("Exit"));
+		InsertMenu(h_menu, -1, MF_BYPOSITION, SWM_EXIT, _T("Exit"));
 		// note:    must set window to the foreground or the
 		//          menu won't disappear when it should
 		SetForegroundWindow(hWnd);
 		TrackPopupMenu(
-			hMenu,
+			h_menu,
 			TPM_BOTTOMALIGN,
 			pt.x,
 			pt.y,
 			0,
 			hWnd,
 			NULL);
-		DestroyMenu(hMenu);
+		DestroyMenu(h_menu);
 	}
 }
 
@@ -319,7 +339,7 @@ void UpdateInfoText(LPCWSTR s)
 // Message handler for the app
 INT_PTR CALLBACK DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-	int wmId, wmEvent;
+	int wm_id;
 
 	switch (message)
 	{
@@ -334,6 +354,9 @@ INT_PTR CALLBACK DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		case WM_RBUTTONDOWN:
 		case WM_CONTEXTMENU:
 			ShowContextMenu(hWnd);
+			break;
+		default:
+			break;
 		}
 
 		break;
@@ -353,7 +376,7 @@ INT_PTR CALLBACK DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		UpdateInfoText(kMsg);
 		break;
 	case UWM_CHILDCREATE:
-		hJob = reinterpret_cast<HANDLE>(lParam);
+		hJob = reinterpret_cast<HANDLE>(lParam);  // NOLINT(performance-no-int-to-ptr)
 		ShowNotificationData(true);
 		break;
 	case WM_SYSCOMMAND:
@@ -370,10 +393,9 @@ INT_PTR CALLBACK DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		break;
 
 	case WM_COMMAND:
-		wmId = LOWORD(wParam);
-		wmEvent = HIWORD(wParam);
+		wm_id = LOWORD(wParam);
 
-		switch (wmId)
+		switch (wm_id)
 		{
 		case SWM_SHOW:
 			ShowWindow(hWnd, SW_RESTORE);
@@ -423,6 +445,8 @@ INT_PTR CALLBACK DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		hJob = NULL;
 		PostQuitMessage(0);
 		break;
+	default:
+		break;
 	}
 
 	return 0;
@@ -443,6 +467,8 @@ LRESULT CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 			return TRUE;
 		}
 
+		break;
+	default:
 		break;
 	}
 
