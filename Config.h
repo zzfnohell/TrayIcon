@@ -1,29 +1,25 @@
 #pragma once
 
-#include <atlbase.h>
-#include <atlpath.h>
-
 class CConfig
 {
-    public:
-        CConfig();
-        virtual ~CConfig();
+public:
+	CConfig();
+	virtual ~CConfig() = default;
 
-        void Initialize();
+	void Initialize();
 
-        const ATL::CPath *GetModuleDirectory() const;
-        const ATL::CPath *GetOnIconPath() const;
-        const ATL::CPath *GetOffIconPath() const;
-        const ATL::CPath *GetAppPath() const;
-        const ATL::CString *GetAppArgs() const;
-    private:
-        ATL::CPath m_ModuleDirectory;
-        ATL::CPath m_IniPath;
-        ATL::CPath m_OnIconPath;
-        ATL::CPath m_OffIconPath;
-        ATL::CPath m_AppPath;
-        ATL::CString m_AppArgs;
-
-        void Canonicalize(ATL::CPath *path);
+	[[nodiscard]] LPCWSTR GetModuleDirectory() const;
+	[[nodiscard]] LPCWSTR GetOnIconPath() const;
+	[[nodiscard]] LPCWSTR GetOffIconPath() const;
+	[[nodiscard]] LPCWSTR GetAppPath() const;
+	[[nodiscard]] LPCWSTR GetAppArgs() const;
+	[[nodiscard]] LPCWSTR GetWorkDirPath() const;
+private:
+	WCHAR m_ModuleDirectory[MAX_PATH];
+	WCHAR m_IniPath[MAX_PATH];
+	WCHAR m_OnIconPath[MAX_PATH];
+	WCHAR m_OffIconPath[MAX_PATH];
+	WCHAR m_AppPath[MAX_PATH];
+	WCHAR m_WorkDirPath[MAX_PATH];
+	WCHAR m_AppArgs[MAX_PATH];
 };
-
