@@ -4,7 +4,7 @@
 #include "stdafx.h"
 #include "resource.h"
 #include <assert.h>
-#include "config.h"
+#include "iniconfig.h"
 
 #define SWM_TRAYMSG WM_APP//        the message ID sent to our window
 
@@ -16,7 +16,7 @@
 #define UWM_CHILDQUIT    (WM_USER + 5)
 #define UWM_CHILDCREATE    (WM_USER + 6)
 
-CConfig config{};
+CIniConfig config{};
 
 // Global Variables:
 HINSTANCE kInst; // current instance
@@ -205,6 +205,29 @@ void BuildCmdLine()
 	wsprintf(kCmdLine, L"%ls %ls", app_path, args);
 }
 
+bool GetUserToken(HANDLE* token)
+{
+	HANDLE existing_handle = NULL;
+	DWORD active_session_id = WTSGetActiveConsoleSessionId();
+
+	if (active_session_id != 0xFFFFFFFF)
+	{
+		if (WTSQueryUserToken(active_session_id, &existing_handle) != 0)
+		{
+			// Convert the impersonation token to a primary token
+			BOOL suc = DuplicateTokenEx(existing_handle, 0, NULL, SECURITY_IMPERSONATION_LEVEL::SecurityImpersonation, TOKEN_TYPE::TokenPrimary, token);
+			assert(suc);
+			suc = CloseHandle(existing_handle);
+			assert(suc);
+			return true;
+		}
+
+	}
+
+	auto ec = GetLastError();
+	return false;
+}
+
 int APIENTRY _tWinMain(
 	HINSTANCE hInstance,
 	HINSTANCE hPrevInstance,
@@ -214,6 +237,13 @@ int APIENTRY _tWinMain(
 	MSG msg;
 	HACCEL hAccelTable;
 	config.Initialize();
+
+	HANDLE user_token = 0;
+	if (GetUserToken(&user_token))
+	{
+
+	}
+
 	BuildCmdLine();
 
 	// Perform application initialization:

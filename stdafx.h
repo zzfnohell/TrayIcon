@@ -17,6 +17,7 @@
 #include <commctrl.h>
 #include <Shellapi.h>
 #include <Shlwapi.h>
+#include <WtsApi32.h>
 
 // C RunTime Header Files
 #include <stdlib.h>
