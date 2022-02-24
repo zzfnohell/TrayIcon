@@ -4,7 +4,11 @@
 #include "stdafx.h"
 #include "resource.h"
 #include <assert.h>
+#include <cstdio>
+
 #include "iniconfig.h"
+
+using namespace std;
 
 #define SWM_TRAYMSG WM_APP//        the message ID sent to our window
 
@@ -15,6 +19,9 @@
 #define UWM_UPDATEINFO    (WM_USER + 4)
 #define UWM_CHILDQUIT    (WM_USER + 5)
 #define UWM_CHILDCREATE    (WM_USER + 6)
+
+
+#define ENV_BUF_SIZE 4096
 
 CIniConfig config{};
 
@@ -34,9 +41,107 @@ TCHAR kMsg[MAX_PATH] = { 0 };
 HANDLE hJob;
 HANDLE hNewWaitHandle;
 bool createJob = false;
+constexpr WCHAR ENV_DELIMITER = L'=';
+constexpr WCHAR ENV_DELIMITER_S[] = L"=";
+
+
+inline int strlen_with_terminal(int v)
+{
+	return v + 1;
+}
+
+LPTSTR SearchEnv(LPTSTR env, LPTSTR key, int key_size)
+{
+	LPTSTR p = env;
+	while (*p)
+	{
+		int i = 0;
+		while (p[i] == key[i] && i < key_size)
+		{
+			i++;
+		}
+
+		if (i < key_size)
+		{
+			const int length = lstrlen(p);
+			p += strlen_with_terminal(length);
+		}
+		else
+		{
+			return p;
+		}
+	}
+
+	return NULL;
+}
+
+
+void ReplaceEnvVar(LPTSTR s, LPTSTR env_dst, size_t dst_size)
+{
+	HRESULT hr;
+	LPTSTR p = s;
+	LPTSTR dst = env_dst;
+	size_t n = dst_size;
+	WCHAR env_replace[ENV_BUF_SIZE];
+	WCHAR kvp[ENV_BUF_SIZE];
+	CIniConfig::GetEnv(env_replace, ENV_BUF_SIZE);
+
+	while (*p)
+	{
+		const int length = lstrlen(p);
+		if (*p == ENV_DELIMITER)
+		{
+			hr = StringCchCopy(dst, n, p);
+			assert(SUCCEEDED(hr));
+
+			assert(n >= strlen_with_terminal(length));
+			n -= strlen_with_terminal(length);
+			dst += strlen_with_terminal(length);
+		}
+		else
+		{
+			WCHAR* b = wcspbrk(p, ENV_DELIMITER_S);
+			LPTSTR rp = NULL;
+			if (b) {
+				size_t key_size = b - p;
+				rp = SearchEnv(env_replace, p, key_size);
+			}
+
+			if (rp)
+			{
+				hr = StringCchCopy(dst, n, rp);
+				assert(SUCCEEDED(hr));
+				size_t new_env_length = lstrlen(rp);
+				assert(n >= strlen_with_terminal(length));
+
+				n -= strlen_with_terminal(new_env_length);
+				dst += strlen_with_terminal(new_env_length);
+			}
+			else
+			{
+				hr = StringCchCopy(dst, n, p);
+				assert(SUCCEEDED(hr));
+
+				assert(n >= strlen_with_terminal(length));
+				n -= strlen_with_terminal(length);
+				dst += strlen_with_terminal(length);
+			}
+		}
+
+		p += strlen_with_terminal(length);
+	}
+}
 
 LPVOID BuildEnvBlock()
 {
+	constexpr int env_size = ENV_BUF_SIZE * 4;
+	LPWCH  env = GetEnvironmentStrings();
+	WCHAR env_replace[ENV_BUF_SIZE];
+	WCHAR env_prefix[ENV_BUF_SIZE];
+	WCHAR dst_env[env_size];
+	LPTSTR p = (LPTSTR)env;
+	ReplaceEnvVar(env, dst_env, env_size);
+
 	return NULL;
 }
 
@@ -216,29 +321,6 @@ INT_PTR CALLBACK DlgProc(HWND, UINT, WPARAM, LPARAM);
 LRESULT CALLBACK About(HWND, UINT, WPARAM, LPARAM);
 
 
-bool GetUserToken(HANDLE* token)
-{
-	HANDLE existing_handle = NULL;
-	DWORD active_session_id = WTSGetActiveConsoleSessionId();
-
-	if (active_session_id != 0xFFFFFFFF)
-	{
-		if (WTSQueryUserToken(active_session_id, &existing_handle) != 0)
-		{
-			// Convert the impersonation token to a primary token
-			BOOL suc = DuplicateTokenEx(existing_handle, 0, NULL, SECURITY_IMPERSONATION_LEVEL::SecurityImpersonation, TOKEN_TYPE::TokenPrimary, token);
-			assert(suc);
-			suc = CloseHandle(existing_handle);
-			assert(suc);
-			return true;
-		}
-
-	}
-
-	auto ec = GetLastError();
-	return false;
-}
-
 
 int APIENTRY _tWinMain(
 	HINSTANCE hInstance,
@@ -250,8 +332,7 @@ int APIENTRY _tWinMain(
 	HACCEL hAccelTable;
 	config.Initialize();
 
-	WCHAR env[INI_VALUE_BUFFER_SIZE];
-	config.GetEnv(env, INI_VALUE_BUFFER_SIZE);
+	BuildEnvBlock();
 
 	// Perform application initialization:
 	if (!InitInstance(hInstance, nCmdShow))

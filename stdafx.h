@@ -17,7 +17,7 @@
 #include <commctrl.h>
 #include <Shellapi.h>
 #include <Shlwapi.h>
-#include <WtsApi32.h>
+#include <strsafe.h>
 
 // C RunTime Header Files
 #include <stdlib.h>
@@ -27,4 +27,3 @@
 
 #include <assert.h>
 
-#include <tlhelp32.h>
