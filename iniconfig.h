@@ -1,5 +1,7 @@
 #pragma once
 
+#define INI_VALUE_BUFFER_SIZE 2048
+
 class CIniConfig
 {
 public:
@@ -10,7 +12,8 @@ public:
 
 	static void GetModuleDirectory(WCHAR* val);
 	static void GetOnIconPath(WCHAR* val);
-	static void GetOffIconPath(WCHAR* val); 
+	static void GetOffIconPath(WCHAR* val);
+	static void GetAppPath(WCHAR* val);
 	static void GetAppArgs(WCHAR* val, DWORD size);
 	static void GetWorkDirPath(WCHAR* val);
 	static void GetIniPath(WCHAR* val);

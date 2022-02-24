@@ -30,7 +30,6 @@ static BOOL OnInitDialog(HWND hWnd);
 static void ShowContextMenu(HWND hWnd);
 
 TCHAR kMsg[MAX_PATH] = { 0 };
-TCHAR kCmdLine[MAX_PATH] = { 0 };
 
 HANDLE hJob;
 HANDLE hNewWaitHandle;
@@ -61,8 +60,11 @@ void InitializeNotificationData()
 void ShowNotificationData(bool on)
 {
 	NOTIFYICONDATA nid;
+	WCHAR image_path[MAX_PATH];
+
 	ZeroMemory(&nid, sizeof(nid));
-	const LPCWSTR image_path = on ? config.GetOnIconPath() : config.GetOffIconPath();
+	on ? CIniConfig::GetOnIconPath(image_path) : CIniConfig::GetOffIconPath(image_path);
+
 	UINT flags = LR_MONOCHROME;
 	flags |= LR_LOADFROMFILE;
 	const auto icon = (HICON)LoadImage(
@@ -80,6 +82,20 @@ void ShowNotificationData(bool on)
 	DestroyIcon(icon);
 }
 
+void BuildCmdLine(WCHAR* cmd, size_t size)
+{
+	WCHAR startup_dir[MAX_PATH];
+	CIniConfig::GetWorkDirPath(startup_dir);
+
+	WCHAR app_path[MAX_PATH];
+	CIniConfig::GetAppPath(app_path);
+
+	WCHAR app_args[INI_VALUE_BUFFER_SIZE];
+	CIniConfig::GetAppArgs(app_args, INI_VALUE_BUFFER_SIZE);
+
+	wsprintf(cmd, L"%ls %ls", app_path, app_args);
+}
+
 void StartProcess()
 {
 	STARTUPINFO si;
@@ -88,14 +104,6 @@ void StartProcess()
 	ZeroMemory(&pi, sizeof(pi));
 	BOOL succeeded;
 
-	if (!(*kCmdLine))
-	{
-		swprintf_s(kMsg, L"Command line is empty (%d).\n", GetLastError());
-		// ReSharper disable once CppAssignedValueIsNeverUsed
-		succeeded = PostMessage(kDlg, UWM_UPDATEINFO, NULL, reinterpret_cast<LPARAM>(kMsg));
-		assert(succeeded);
-		return;
-	}
 	HANDLE hJobObject = CreateJobObject(NULL, NULL);
 	assert(hJobObject != NULL);
 
@@ -120,10 +128,14 @@ void StartProcess()
 	si.dwFlags = STARTF_USESHOWWINDOW;
 	si.wShowWindow = SW_HIDE;
 
-	const auto startup_dir = config.GetWorkDirPath();
+	WCHAR startup_dir[MAX_PATH];
+	CIniConfig::GetWorkDirPath(startup_dir);
+
+	TCHAR cmd_line[MAX_PATH + INI_VALUE_BUFFER_SIZE] = { 0 };
+	BuildCmdLine(cmd_line, MAX_PATH);
 	succeeded = CreateProcess(
 		NULL, // No module name (use command line)
-		kCmdLine, // Command line
+		cmd_line, // Command line
 		NULL, // Process handle not inheritable
 		NULL, // Thread handle not inheritable
 		TRUE, // Set handle inheritance to FALSE
@@ -198,12 +210,6 @@ void StopProcess()
 INT_PTR CALLBACK DlgProc(HWND, UINT, WPARAM, LPARAM);
 LRESULT CALLBACK About(HWND, UINT, WPARAM, LPARAM);
 
-void BuildCmdLine()
-{
-	const auto app_path = config.GetAppPath();
-	const auto args = config.GetAppArgs();
-	wsprintf(kCmdLine, L"%ls %ls", app_path, args);
-}
 
 bool GetUserToken(HANDLE* token)
 {
@@ -237,14 +243,6 @@ int APIENTRY _tWinMain(
 	MSG msg;
 	HACCEL hAccelTable;
 	config.Initialize();
-
-	HANDLE user_token = 0;
-	if (GetUserToken(&user_token))
-	{
-
-	}
-
-	BuildCmdLine();
 
 	// Perform application initialization:
 	if (!InitInstance(hInstance, nCmdShow))
@@ -287,7 +285,10 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	}
 
 	InitializeNotificationData();
-	const auto image_path = config.GetOffIconPath();
+
+	WCHAR image_path[MAX_PATH];
+	CIniConfig::GetOffIconPath(image_path);
+
 	constexpr UINT flags = LR_LOADFROMFILE;
 	const auto icon = (HICON)LoadImage(
 		NULL,
@@ -306,7 +307,8 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
 BOOL OnInitDialog(HWND hWnd)
 {
-	const auto image_path = config.GetOffIconPath();
+	WCHAR image_path[MAX_PATH];
+	CIniConfig::GetOffIconPath(image_path);
 
 	if (HMENU h_menu = GetSystemMenu(hWnd, FALSE))
 	{

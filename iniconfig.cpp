@@ -1,8 +1,6 @@
 #include "stdafx.h"
 #include "iniconfig.h"
 
-
-#define BUFFER_SIZE 2048
 #define SECTION_UI L"UI"
 #define SECTION_APP L"App"
 #define KEY_UI_ONIMAGE L"OnImage"
@@ -47,7 +45,7 @@ void CIniConfig::GetPathValueFromIni(LPCWSTR section, LPCWSTR key, LPCWSTR defau
 		key,
 		default_value,
 		val,
-		BUFFER_SIZE,
+		INI_VALUE_BUFFER_SIZE,
 		ini_path);
 
 	Canonicalize(val, mod_dir);
@@ -82,7 +80,6 @@ void CIniConfig::Initialize()
 
 void CIniConfig::GetModuleDirectory(WCHAR* val)
 {
-	WCHAR buffer[BUFFER_SIZE];
 	[[maybe_unused]] const DWORD size = GetModuleFileName(NULL, val, MAX_PATH);
 	assert(size > 0);
 
@@ -109,6 +106,11 @@ void CIniConfig::GetOnIconPath(WCHAR* val)
 void CIniConfig::GetOffIconPath(WCHAR* val)
 {
 	GetPathValueFromIni(SECTION_UI, KEY_UI_OFFIMAGE, KEY_UI_OFFIMAGE_DEFAULT, val);
+}
+
+void CIniConfig::GetAppPath(WCHAR* val)
+{
+	GetPathValueFromIni(SECTION_APP, KEY_APP_PATH, KEY_APP_PATH_DEFAULT, val);
 }
 
 void CIniConfig::GetAppArgs(WCHAR* val, DWORD size)
