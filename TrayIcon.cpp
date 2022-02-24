@@ -102,7 +102,7 @@ void StartProcess()
 	PROCESS_INFORMATION pi;
 	ZeroMemory(&si, sizeof(si));
 	ZeroMemory(&pi, sizeof(pi));
-	BOOL succeeded;
+	BOOL rc;
 
 	HANDLE hJobObject = CreateJobObject(NULL, NULL);
 	assert(hJobObject != NULL);
@@ -111,16 +111,16 @@ void StartProcess()
 	memset(&jeli, 0, sizeof(JOBOBJECT_EXTENDED_LIMIT_INFORMATION));
 
 	jeli.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
-	succeeded = SetInformationJobObject(hJobObject, JobObjectExtendedLimitInformation, &jeli, sizeof(jeli));
-	if (succeeded == 0)
+	rc = SetInformationJobObject(hJobObject, JobObjectExtendedLimitInformation, &jeli, sizeof(jeli));
+	if (rc == 0)
 	{
 		// ReSharper disable once CppAssignedValueIsNeverUsed
-		succeeded = CloseHandle(hJobObject);
-		assert(succeeded);
+		rc = CloseHandle(hJobObject);
+		assert(rc);
 		swprintf_s(kMsg, L"Create Job failed (%d).\n", GetLastError());
 		// ReSharper disable once CppAssignedValueIsNeverUsed
-		succeeded = PostMessage(kDlg, UWM_UPDATEINFO, NULL, reinterpret_cast<LPARAM>(kMsg));
-		assert(succeeded);
+		rc = PostMessage(kDlg, UWM_UPDATEINFO, NULL, reinterpret_cast<LPARAM>(kMsg));
+		assert(rc);
 		return;
 	}
 
@@ -133,7 +133,7 @@ void StartProcess()
 
 	TCHAR cmd_line[MAX_PATH + INI_VALUE_BUFFER_SIZE] = { 0 };
 	BuildCmdLine(cmd_line, MAX_PATH);
-	succeeded = CreateProcess(
+	rc = CreateProcess(
 		NULL, // No module name (use command line)
 		cmd_line, // Command line
 		NULL, // Process handle not inheritable
@@ -146,47 +146,47 @@ void StartProcess()
 		&pi // Pointer to PROCESS_INFORMATION structure
 	);
 
-	if (!succeeded)
+	if (!rc)
 	{
 		// ReSharper disable once CppAssignedValueIsNeverUsed
-		succeeded = CloseHandle(hJobObject);
-		assert(succeeded);
+		rc = CloseHandle(hJobObject);
+		assert(rc);
 		wsprintf(kMsg, L"CreateProcess failed (%d).\n", GetLastError());
 		// ReSharper disable once CppAssignedValueIsNeverUsed
-		succeeded = PostMessage(kDlg, UWM_UPDATEINFO, NULL, reinterpret_cast<LPARAM>(kMsg));
-		assert(succeeded);
+		rc = PostMessage(kDlg, UWM_UPDATEINFO, NULL, reinterpret_cast<LPARAM>(kMsg));
+		assert(rc);
 		return;
 	}
 
-	succeeded = AssignProcessToJobObject(hJobObject, pi.hProcess);
-	if (!succeeded)
+	rc = AssignProcessToJobObject(hJobObject, pi.hProcess);
+	if (!rc)
 	{
 		wsprintf(kMsg, L"AssignProcessToJobObject failed (%d).\n", GetLastError());
 		// ReSharper disable once CppAssignedValueIsNeverUsed
-		succeeded = CloseHandle(pi.hProcess);
-		assert(succeeded);
+		rc = CloseHandle(pi.hProcess);
+		assert(rc);
 		// ReSharper disable once CppAssignedValueIsNeverUsed
-		succeeded = CloseHandle(hJobObject);
-		assert(succeeded);
+		rc = CloseHandle(hJobObject);
+		assert(rc);
 		// ReSharper disable once CppAssignedValueIsNeverUsed
-		succeeded = PostMessage(kDlg, UWM_UPDATEINFO, NULL, reinterpret_cast<LPARAM>(kMsg));
-		assert(succeeded);
+		rc = PostMessage(kDlg, UWM_UPDATEINFO, NULL, reinterpret_cast<LPARAM>(kMsg));
+		assert(rc);
 		return;
 	}
 
 	// ReSharper disable once CppAssignedValueIsNeverUsed
-	succeeded = PostMessage(kDlg, UWM_CHILDCREATE, NULL, reinterpret_cast<LPARAM>(hJobObject));
-	assert(succeeded);
+	rc = PostMessage(kDlg, UWM_CHILDCREATE, NULL, reinterpret_cast<LPARAM>(hJobObject));
+	assert(rc);
 
 	wsprintf(kMsg, L"Process Running (%d).\n", pi.dwProcessId);
 	// ReSharper disable once CppAssignedValueIsNeverUsed
-	succeeded = PostMessage(kDlg, UWM_UPDATEINFO, NULL, reinterpret_cast<LPARAM>(kMsg));
-	assert(succeeded);
+	rc = PostMessage(kDlg, UWM_UPDATEINFO, NULL, reinterpret_cast<LPARAM>(kMsg));
+	assert(rc);
 
 	// ReSharper disable once CppAssignedValueIsNeverUsed
-	succeeded = RegisterWaitForSingleObject(&hNewWaitHandle, pi.hProcess, WaitOrTimerCallback, hJobObject, INFINITE,
+	rc = RegisterWaitForSingleObject(&hNewWaitHandle, pi.hProcess, WaitOrTimerCallback, hJobObject, INFINITE,
 		WT_EXECUTEONLYONCE);
-	assert(succeeded);
+	assert(rc);
 }
 
 void StopProcess()
