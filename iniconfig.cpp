@@ -15,6 +15,8 @@
 #define KEY_APP_ARGS_DEFAULT NULL
 #define KEY_APP_WORKDIR_PATH L"WorkDir"
 
+constexpr  WCHAR SECTION_ENV[] = L"Env";
+constexpr  WCHAR SECTION_ENV_PREFIX[] = L"Env.Prefix";
 
 void Canonicalize(WCHAR path[], WCHAR dir[])
 {
@@ -122,3 +124,26 @@ void CIniConfig::GetWorkDirPath(WCHAR* val)
 {
 	GetPathValueFromIni(SECTION_APP, KEY_APP_WORKDIR_PATH, NULL, val);
 }
+
+void CIniConfig::GetEnv (WCHAR* val, DWORD size)
+{
+	WCHAR ini_path[MAX_PATH];
+	WCHAR mod_dir[MAX_PATH];
+
+	GetModuleDirectory(mod_dir);
+	GetIniPath(ini_path);
+
+	GetPrivateProfileSection(SECTION_ENV, val, size, ini_path);
+}
+
+void CIniConfig::GetEnvPrefix(WCHAR* val, DWORD size)
+{
+	WCHAR ini_path[MAX_PATH];
+	WCHAR mod_dir[MAX_PATH];
+
+	GetModuleDirectory(mod_dir);
+	GetIniPath(ini_path);
+
+	GetPrivateProfileSection(SECTION_ENV_PREFIX, val, size, ini_path);
+}
+

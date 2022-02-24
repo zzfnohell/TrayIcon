@@ -35,6 +35,11 @@ HANDLE hJob;
 HANDLE hNewWaitHandle;
 bool createJob = false;
 
+LPVOID BuildEnvBlock()
+{
+	return NULL;
+}
+
 VOID CALLBACK WaitOrTimerCallback(_In_ PVOID lpParameter, _In_ BOOLEAN TimerOrWaitFired)
 {
 	if (!TimerOrWaitFired)
@@ -234,6 +239,7 @@ bool GetUserToken(HANDLE* token)
 	return false;
 }
 
+
 int APIENTRY _tWinMain(
 	HINSTANCE hInstance,
 	HINSTANCE hPrevInstance,
@@ -243,6 +249,9 @@ int APIENTRY _tWinMain(
 	MSG msg;
 	HACCEL hAccelTable;
 	config.Initialize();
+
+	WCHAR env[INI_VALUE_BUFFER_SIZE];
+	config.GetEnv(env, INI_VALUE_BUFFER_SIZE);
 
 	// Perform application initialization:
 	if (!InitInstance(hInstance, nCmdShow))
