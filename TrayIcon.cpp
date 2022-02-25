@@ -76,7 +76,7 @@ LPTSTR SearchEnv(LPTSTR env, LPTSTR key, int key_size)
 }
 
 
-void ReplaceEnvVar(LPTSTR s, LPTSTR env_dst, size_t dst_size)
+void ReplaceEnvVar(LPTSTR env_dst, LPTSTR s, size_t dst_size)
 {
 	HRESULT hr;
 	LPTSTR p = s;
@@ -132,15 +132,75 @@ void ReplaceEnvVar(LPTSTR s, LPTSTR env_dst, size_t dst_size)
 	}
 }
 
+void PrefixEnvVar(LPTSTR env_dst, LPTSTR s, size_t dst_size)
+{
+	HRESULT hr;
+	LPTSTR p = s;
+	LPTSTR dst = env_dst;
+	size_t n = dst_size;
+	WCHAR env_prefix[ENV_BUF_SIZE];
+	WCHAR kvp[ENV_BUF_SIZE];
+	CIniConfig::GetEnvPrefix(env_prefix, ENV_BUF_SIZE);
+
+	while (*p)
+	{
+		const int length = lstrlen(p);
+		if (*p == ENV_DELIMITER)
+		{
+			hr = StringCchCopy(dst, n, p);
+			assert(SUCCEEDED(hr));
+
+			assert(n >= strlen_with_terminal(length));
+			n -= strlen_with_terminal(length);
+			dst += strlen_with_terminal(length);
+		}
+		else
+		{
+			WCHAR* b = wcspbrk(p, ENV_DELIMITER_S);
+			LPTSTR rp = NULL;
+			WCHAR* v = NULL;
+			if (b) {
+				v = b + 1;
+				const size_t key_size = b - p;
+				rp = SearchEnv(env_prefix, p, key_size);
+			}
+
+			if (rp)
+			{
+				if (v)
+				{
+					
+				}
+				hr = StringCchCopy(dst, n, rp);
+				assert(SUCCEEDED(hr));
+				size_t new_env_length = lstrlen(rp);
+				assert(n >= strlen_with_terminal(length));
+
+				n -= strlen_with_terminal(new_env_length);
+				dst += strlen_with_terminal(new_env_length);
+			}
+			else
+			{
+				hr = StringCchCopy(dst, n, p);
+				assert(SUCCEEDED(hr));
+
+				assert(n >= strlen_with_terminal(length));
+				n -= strlen_with_terminal(length);
+				dst += strlen_with_terminal(length);
+			}
+		}
+
+		p += strlen_with_terminal(length);
+	}
+}
 LPVOID BuildEnvBlock()
 {
 	constexpr int env_size = ENV_BUF_SIZE * 4;
 	LPWCH  env = GetEnvironmentStrings();
-	WCHAR env_replace[ENV_BUF_SIZE];
-	WCHAR env_prefix[ENV_BUF_SIZE];
-	WCHAR dst_env[env_size];
-	LPTSTR p = (LPTSTR)env;
-	ReplaceEnvVar(env, dst_env, env_size);
+	WCHAR dst_env[2][env_size];
+
+	ReplaceEnvVar(env, dst_env[0], env_size);
+	PrefixEnvVar(dst_env[0], dst_env[1], env_size);
 
 	return NULL;
 }
