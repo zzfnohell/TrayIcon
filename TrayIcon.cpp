@@ -4,7 +4,11 @@
 #include "stdafx.h"
 #include "resource.h"
 #include <assert.h>
-#include "config.h"
+#include <cstdio>
+
+#include "iniconfig.h"
+
+using namespace std;
 
 #define SWM_TRAYMSG WM_APP//        the message ID sent to our window
 
@@ -16,7 +20,10 @@
 #define UWM_CHILDQUIT    (WM_USER + 5)
 #define UWM_CHILDCREATE    (WM_USER + 6)
 
-CConfig config{};
+
+#define ENV_BUF_SIZE 4096
+
+CIniConfig config{};
 
 // Global Variables:
 HINSTANCE kInst; // current instance
@@ -30,11 +37,173 @@ static BOOL OnInitDialog(HWND hWnd);
 static void ShowContextMenu(HWND hWnd);
 
 TCHAR kMsg[MAX_PATH] = { 0 };
-TCHAR kCmdLine[MAX_PATH] = { 0 };
 
 HANDLE hJob;
 HANDLE hNewWaitHandle;
 bool createJob = false;
+constexpr WCHAR ENV_DELIMITER = L'=';
+constexpr WCHAR ENV_DELIMITER_S[] = L"=";
+
+
+inline int strlen_with_terminal(int v)
+{
+	return v + 1;
+}
+
+LPTSTR SearchEnv(LPTSTR env, LPTSTR key, int key_size)
+{
+	LPTSTR p = env;
+	while (*p)
+	{
+		int i = 0;
+		while (p[i] == key[i] && i < key_size)
+		{
+			i++;
+		}
+
+		if (i < key_size)
+		{
+			const int length = lstrlen(p);
+			p += strlen_with_terminal(length);
+		}
+		else
+		{
+			return p;
+		}
+	}
+
+	return NULL;
+}
+
+
+void ReplaceEnvVar(LPTSTR env_dst, LPTSTR s, size_t dst_size)
+{
+	HRESULT hr;
+	LPTSTR p = s;
+	LPTSTR dst = env_dst;
+	size_t n = dst_size;
+	WCHAR env_replace[ENV_BUF_SIZE];
+	WCHAR kvp[ENV_BUF_SIZE];
+	CIniConfig::GetEnv(env_replace, ENV_BUF_SIZE);
+
+	while (*p)
+	{
+		const int length = lstrlen(p);
+		if (*p == ENV_DELIMITER)
+		{
+			hr = StringCchCopy(dst, n, p);
+			assert(SUCCEEDED(hr));
+
+			assert(n >= strlen_with_terminal(length));
+			n -= strlen_with_terminal(length);
+			dst += strlen_with_terminal(length);
+		}
+		else
+		{
+			WCHAR* b = wcspbrk(p, ENV_DELIMITER_S);
+			LPTSTR rp = NULL;
+			if (b) {
+				size_t key_size = b - p;
+				rp = SearchEnv(env_replace, p, key_size);
+			}
+
+			if (rp)
+			{
+				hr = StringCchCopy(dst, n, rp);
+				assert(SUCCEEDED(hr));
+				size_t new_env_length = lstrlen(rp);
+				assert(n >= strlen_with_terminal(length));
+
+				n -= strlen_with_terminal(new_env_length);
+				dst += strlen_with_terminal(new_env_length);
+			}
+			else
+			{
+				hr = StringCchCopy(dst, n, p);
+				assert(SUCCEEDED(hr));
+
+				assert(n >= strlen_with_terminal(length));
+				n -= strlen_with_terminal(length);
+				dst += strlen_with_terminal(length);
+			}
+		}
+
+		p += strlen_with_terminal(length);
+	}
+}
+
+void PrefixEnvVar(LPTSTR env_dst, LPTSTR s, size_t dst_size)
+{
+	HRESULT hr;
+	LPTSTR p = s;
+	LPTSTR dst = env_dst;
+	size_t n = dst_size;
+	WCHAR env_prefix[ENV_BUF_SIZE];
+	WCHAR kvp[ENV_BUF_SIZE];
+	CIniConfig::GetEnvPrefix(env_prefix, ENV_BUF_SIZE);
+
+	while (*p)
+	{
+		const int length = lstrlen(p);
+		if (*p == ENV_DELIMITER)
+		{
+			hr = StringCchCopy(dst, n, p);
+			assert(SUCCEEDED(hr));
+
+			assert(n >= strlen_with_terminal(length));
+			n -= strlen_with_terminal(length);
+			dst += strlen_with_terminal(length);
+		}
+		else
+		{
+			WCHAR* b = wcspbrk(p, ENV_DELIMITER_S);
+			LPTSTR rp = NULL;
+			WCHAR* v = NULL;
+			if (b) {
+				v = b + 1;
+				const size_t key_size = b - p;
+				rp = SearchEnv(env_prefix, p, key_size);
+			}
+
+			if (rp)
+			{
+				if (v)
+				{
+					
+				}
+				hr = StringCchCopy(dst, n, rp);
+				assert(SUCCEEDED(hr));
+				size_t new_env_length = lstrlen(rp);
+				assert(n >= strlen_with_terminal(length));
+
+				n -= strlen_with_terminal(new_env_length);
+				dst += strlen_with_terminal(new_env_length);
+			}
+			else
+			{
+				hr = StringCchCopy(dst, n, p);
+				assert(SUCCEEDED(hr));
+
+				assert(n >= strlen_with_terminal(length));
+				n -= strlen_with_terminal(length);
+				dst += strlen_with_terminal(length);
+			}
+		}
+
+		p += strlen_with_terminal(length);
+	}
+}
+LPVOID BuildEnvBlock()
+{
+	constexpr int env_size = ENV_BUF_SIZE * 4;
+	LPWCH  env = GetEnvironmentStrings();
+	WCHAR dst_env[2][env_size];
+
+	ReplaceEnvVar(env, dst_env[0], env_size);
+	PrefixEnvVar(dst_env[0], dst_env[1], env_size);
+
+	return NULL;
+}
 
 VOID CALLBACK WaitOrTimerCallback(_In_ PVOID lpParameter, _In_ BOOLEAN TimerOrWaitFired)
 {
@@ -61,8 +230,11 @@ void InitializeNotificationData()
 void ShowNotificationData(bool on)
 {
 	NOTIFYICONDATA nid;
+	WCHAR image_path[MAX_PATH];
+
 	ZeroMemory(&nid, sizeof(nid));
-	const LPCWSTR image_path = on ? config.GetOnIconPath() : config.GetOffIconPath();
+	on ? CIniConfig::GetOnIconPath(image_path) : CIniConfig::GetOffIconPath(image_path);
+
 	UINT flags = LR_MONOCHROME;
 	flags |= LR_LOADFROMFILE;
 	const auto icon = (HICON)LoadImage(
@@ -80,22 +252,28 @@ void ShowNotificationData(bool on)
 	DestroyIcon(icon);
 }
 
+void BuildCmdLine(WCHAR* cmd, size_t size)
+{
+	WCHAR startup_dir[MAX_PATH];
+	CIniConfig::GetWorkDirPath(startup_dir);
+
+	WCHAR app_path[MAX_PATH];
+	CIniConfig::GetAppPath(app_path);
+
+	WCHAR app_args[INI_VALUE_BUFFER_SIZE];
+	CIniConfig::GetAppArgs(app_args, INI_VALUE_BUFFER_SIZE);
+
+	wsprintf(cmd, L"%ls %ls", app_path, app_args);
+}
+
 void StartProcess()
 {
 	STARTUPINFO si;
 	PROCESS_INFORMATION pi;
 	ZeroMemory(&si, sizeof(si));
 	ZeroMemory(&pi, sizeof(pi));
-	BOOL succeeded;
+	BOOL rc;
 
-	if (!(*kCmdLine))
-	{
-		swprintf_s(kMsg, L"Command line is empty (%d).\n", GetLastError());
-		// ReSharper disable once CppAssignedValueIsNeverUsed
-		succeeded = PostMessage(kDlg, UWM_UPDATEINFO, NULL, reinterpret_cast<LPARAM>(kMsg));
-		assert(succeeded);
-		return;
-	}
 	HANDLE hJobObject = CreateJobObject(NULL, NULL);
 	assert(hJobObject != NULL);
 
@@ -103,16 +281,16 @@ void StartProcess()
 	memset(&jeli, 0, sizeof(JOBOBJECT_EXTENDED_LIMIT_INFORMATION));
 
 	jeli.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
-	succeeded = SetInformationJobObject(hJobObject, JobObjectExtendedLimitInformation, &jeli, sizeof(jeli));
-	if (succeeded == 0)
+	rc = SetInformationJobObject(hJobObject, JobObjectExtendedLimitInformation, &jeli, sizeof(jeli));
+	if (rc == 0)
 	{
 		// ReSharper disable once CppAssignedValueIsNeverUsed
-		succeeded = CloseHandle(hJobObject);
-		assert(succeeded);
+		rc = CloseHandle(hJobObject);
+		assert(rc);
 		swprintf_s(kMsg, L"Create Job failed (%d).\n", GetLastError());
 		// ReSharper disable once CppAssignedValueIsNeverUsed
-		succeeded = PostMessage(kDlg, UWM_UPDATEINFO, NULL, reinterpret_cast<LPARAM>(kMsg));
-		assert(succeeded);
+		rc = PostMessage(kDlg, UWM_UPDATEINFO, NULL, reinterpret_cast<LPARAM>(kMsg));
+		assert(rc);
 		return;
 	}
 
@@ -120,10 +298,14 @@ void StartProcess()
 	si.dwFlags = STARTF_USESHOWWINDOW;
 	si.wShowWindow = SW_HIDE;
 
-	const auto startup_dir = config.GetWorkDirPath();
-	succeeded = CreateProcess(
+	WCHAR startup_dir[MAX_PATH];
+	CIniConfig::GetWorkDirPath(startup_dir);
+
+	TCHAR cmd_line[MAX_PATH + INI_VALUE_BUFFER_SIZE] = { 0 };
+	BuildCmdLine(cmd_line, MAX_PATH);
+	rc = CreateProcess(
 		NULL, // No module name (use command line)
-		kCmdLine, // Command line
+		cmd_line, // Command line
 		NULL, // Process handle not inheritable
 		NULL, // Thread handle not inheritable
 		TRUE, // Set handle inheritance to FALSE
@@ -134,47 +316,47 @@ void StartProcess()
 		&pi // Pointer to PROCESS_INFORMATION structure
 	);
 
-	if (!succeeded)
+	if (!rc)
 	{
 		// ReSharper disable once CppAssignedValueIsNeverUsed
-		succeeded = CloseHandle(hJobObject);
-		assert(succeeded);
+		rc = CloseHandle(hJobObject);
+		assert(rc);
 		wsprintf(kMsg, L"CreateProcess failed (%d).\n", GetLastError());
 		// ReSharper disable once CppAssignedValueIsNeverUsed
-		succeeded = PostMessage(kDlg, UWM_UPDATEINFO, NULL, reinterpret_cast<LPARAM>(kMsg));
-		assert(succeeded);
+		rc = PostMessage(kDlg, UWM_UPDATEINFO, NULL, reinterpret_cast<LPARAM>(kMsg));
+		assert(rc);
 		return;
 	}
 
-	succeeded = AssignProcessToJobObject(hJobObject, pi.hProcess);
-	if (!succeeded)
+	rc = AssignProcessToJobObject(hJobObject, pi.hProcess);
+	if (!rc)
 	{
 		wsprintf(kMsg, L"AssignProcessToJobObject failed (%d).\n", GetLastError());
 		// ReSharper disable once CppAssignedValueIsNeverUsed
-		succeeded = CloseHandle(pi.hProcess);
-		assert(succeeded);
+		rc = CloseHandle(pi.hProcess);
+		assert(rc);
 		// ReSharper disable once CppAssignedValueIsNeverUsed
-		succeeded = CloseHandle(hJobObject);
-		assert(succeeded);
+		rc = CloseHandle(hJobObject);
+		assert(rc);
 		// ReSharper disable once CppAssignedValueIsNeverUsed
-		succeeded = PostMessage(kDlg, UWM_UPDATEINFO, NULL, reinterpret_cast<LPARAM>(kMsg));
-		assert(succeeded);
+		rc = PostMessage(kDlg, UWM_UPDATEINFO, NULL, reinterpret_cast<LPARAM>(kMsg));
+		assert(rc);
 		return;
 	}
 
 	// ReSharper disable once CppAssignedValueIsNeverUsed
-	succeeded = PostMessage(kDlg, UWM_CHILDCREATE, NULL, reinterpret_cast<LPARAM>(hJobObject));
-	assert(succeeded);
+	rc = PostMessage(kDlg, UWM_CHILDCREATE, NULL, reinterpret_cast<LPARAM>(hJobObject));
+	assert(rc);
 
 	wsprintf(kMsg, L"Process Running (%d).\n", pi.dwProcessId);
 	// ReSharper disable once CppAssignedValueIsNeverUsed
-	succeeded = PostMessage(kDlg, UWM_UPDATEINFO, NULL, reinterpret_cast<LPARAM>(kMsg));
-	assert(succeeded);
+	rc = PostMessage(kDlg, UWM_UPDATEINFO, NULL, reinterpret_cast<LPARAM>(kMsg));
+	assert(rc);
 
 	// ReSharper disable once CppAssignedValueIsNeverUsed
-	succeeded = RegisterWaitForSingleObject(&hNewWaitHandle, pi.hProcess, WaitOrTimerCallback, hJobObject, INFINITE,
+	rc = RegisterWaitForSingleObject(&hNewWaitHandle, pi.hProcess, WaitOrTimerCallback, hJobObject, INFINITE,
 		WT_EXECUTEONLYONCE);
-	assert(succeeded);
+	assert(rc);
 }
 
 void StopProcess()
@@ -198,12 +380,7 @@ void StopProcess()
 INT_PTR CALLBACK DlgProc(HWND, UINT, WPARAM, LPARAM);
 LRESULT CALLBACK About(HWND, UINT, WPARAM, LPARAM);
 
-void BuildCmdLine()
-{
-	const auto app_path = config.GetAppPath();
-	const auto args = config.GetAppArgs();
-	wsprintf(kCmdLine, L"%ls %ls", app_path, args);
-}
+
 
 int APIENTRY _tWinMain(
 	HINSTANCE hInstance,
@@ -214,7 +391,8 @@ int APIENTRY _tWinMain(
 	MSG msg;
 	HACCEL hAccelTable;
 	config.Initialize();
-	BuildCmdLine();
+
+	BuildEnvBlock();
 
 	// Perform application initialization:
 	if (!InitInstance(hInstance, nCmdShow))
@@ -257,7 +435,10 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	}
 
 	InitializeNotificationData();
-	const auto image_path = config.GetOffIconPath();
+
+	WCHAR image_path[MAX_PATH];
+	CIniConfig::GetOffIconPath(image_path);
+
 	constexpr UINT flags = LR_LOADFROMFILE;
 	const auto icon = (HICON)LoadImage(
 		NULL,
@@ -276,7 +457,8 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
 BOOL OnInitDialog(HWND hWnd)
 {
-	const auto image_path = config.GetOffIconPath();
+	WCHAR image_path[MAX_PATH];
+	CIniConfig::GetOffIconPath(image_path);
 
 	if (HMENU h_menu = GetSystemMenu(hWnd, FALSE))
 	{
