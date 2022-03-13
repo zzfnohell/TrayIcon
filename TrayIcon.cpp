@@ -189,6 +189,7 @@ void StartProcess()
     LPWSTR cmd = new wchar_t[word_count];
     wcscpy_s(cmd, word_count, cmd_line.c_str());
 
+    wchar_t* env_block = build_env_block();
     rc = CreateProcess(
         NULL, // No module name (use command line)
         cmd, // Command line
@@ -196,13 +197,14 @@ void StartProcess()
         NULL, // Thread handle not inheritable
         TRUE, // Set handle inheritance to FALSE
         0, // No creation flags
-        NULL, // Use parent's environment block
+        env_block, // Use parent's environment block
         startup_dir, // Use parent's starting directory
         &si, // Pointer to STARTUPINFO structure
         &pi // Pointer to PROCESS_INFORMATION structure
     );
 
     delete[] cmd;
+    delete[] env_block;
 
     if (!rc)
     {

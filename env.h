@@ -1,3 +1,3 @@
 #pragma once
 
-LPVOID build_env_block();
+wchar_t* build_env_block();
