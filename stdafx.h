@@ -27,6 +27,7 @@
 #include <memory.h>
 #include <assert.h>
 #include <string>
+#include <string_view>
 #include <cassert>
 #include <memory>
 #include <iostream>
@@ -34,3 +35,5 @@
 #include <algorithm>
 #include <list>
 #include <regex>
+#include <ranges>
+#include <optional>
