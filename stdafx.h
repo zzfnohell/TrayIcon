@@ -17,13 +17,19 @@
 #include <commctrl.h>
 #include <Shellapi.h>
 #include <Shlwapi.h>
+#include <tchar.h>
 #include <strsafe.h>
 
+
 // C RunTime Header Files
-#include <stdlib.h>
-#include <malloc.h>
+#include <stdio.h>
+#include <string.h>
 #include <memory.h>
-#include <tchar.h>
-
 #include <assert.h>
-
+#include <string>
+#include <cassert>
+#include <memory>
+#include <iostream>
+#include <sstream>
+#include <algorithm>
+#include <list>
