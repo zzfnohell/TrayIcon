@@ -257,15 +257,10 @@ void StopProcess()
     }
 }
 
-INT_PTR CALLBACK DlgProc(HWND, UINT, WPARAM, LPARAM);
-LRESULT CALLBACK About(HWND, UINT, WPARAM, LPARAM);
-
-
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow)
 {
     MSG msg;
-    HACCEL hAccelTable;
     register_class(hInstance, WndProc);
     config.Initialize();
 
@@ -290,9 +285,6 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
 //  Initialize the window and tray icon
 BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
-    // prepare for XP style controls
-    //InitCommonControls();
-
     kInst = hInstance;
 
     kDlg = create_window(hInstance, nCmdShow);
