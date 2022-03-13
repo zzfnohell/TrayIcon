@@ -38,35 +38,20 @@ HANDLE hJob;
 HANDLE hNewWaitHandle;
 bool createJob = false;
 
-LPWSTR str_alloc(size_t size) {
-    size_t n = (size + 1) * sizeof(WCHAR);
-    LPWSTR p = (LPWSTR)malloc(n);
-    return p;
-}
-
-LPCWSTR str_format(LPCWSTR format, ...) {
-    constexpr int K = 4;
-    LPWSTR p = NULL;
-    va_list args;
-    va_start(args, format);
-    wchar_t b[K];
-    size_t n = vswprintf_s(b, format, args);
-    p = str_alloc(n);
-    size_t buf_size = (n + 1) * sizeof(WCHAR);
-    if (n >= K) {
-        n = vswprintf(p, buf_size, format, args);
-    }
-    else {
-        wcscpy_s(p, n + 1, b);
-    }
-    va_end(args);
-
-    return NULL;
-}
 
 LPWSTR format_last_error(const wstring& msg) {
     wostringstream oss;
-    oss << msg << " " << L"(" << GetLastError() << ")" << endl;
+    DWORD dwErrorCode = GetLastError();
+    WCHAR pBuffer[MAX_PATH];
+    DWORD cchMsg = FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+        NULL,  /* (not used with FORMAT_MESSAGE_FROM_SYSTEM) */
+        dwErrorCode,
+        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+        pBuffer,
+        MAX_PATH,
+        NULL);
+
+    oss << msg << endl << L"(" << dwErrorCode << ")" << " " << pBuffer;
     wstring s = oss.str();
     rsize_t word_count = s.length() + 1;
     wchar_t* p = new wchar_t[word_count];
@@ -139,9 +124,9 @@ unique_ptr<wchar_t[]> BuildCmdLine()
     WCHAR app_path[MAX_PATH];
     CIniConfig::GetAppPath(app_path);
 
-    WCHAR* app_args = new WCHAR[APP_ARGS_LENGTH];
-    CIniConfig::GetAppArgs(app_args, APP_ARGS_LENGTH);
-    delete[] app_args;
+    unique_ptr<wchar_t[]> app_args = make_unique<wchar_t[]>(APP_ARGS_LENGTH);
+    CIniConfig::GetAppArgs(app_args.get(), APP_ARGS_LENGTH);
+
     wstringstream wss;
     wss << app_path << " " << app_args;
 
@@ -200,7 +185,7 @@ void StartProcess()
         NULL, // Process handle not inheritable
         NULL, // Thread handle not inheritable
         TRUE, // Set handle inheritance to FALSE
-        0, // No creation flags
+        CREATE_UNICODE_ENVIRONMENT, // No creation flags
         env_block.get(), // Use parent's environment block
         startup_dir, // Use parent's starting directory
         &si, // Pointer to STARTUPINFO structure
@@ -278,7 +263,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
 {
     MSG msg;
     HACCEL hAccelTable;
-    config.Initialize(); 
+    config.Initialize();
 
     // Perform application initialization:
     if (!InitInstance(hInstance, nCmdShow))

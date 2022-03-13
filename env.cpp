@@ -137,12 +137,16 @@ unique_ptr<wchar_t[]> env_list_to_block(const list<wstring>& env_list) {
 unique_ptr<wchar_t[]> build_env_block()
 {
     list<wstring> env_list{};
-    list<wstring> replace_list{};
-
-    CIniConfig::GetEnvList(replace_list);
     parse_env(env_list);
+
+    list<wstring> replace_list{};
+    CIniConfig::GetEnvList(replace_list);
     replace_env(env_list, replace_list);
-    prefix_env(env_list, replace_list);
+
+    list<wstring> prefix_list{};
+    CIniConfig::GetEnvPrefixList(prefix_list);
+    prefix_env(env_list, prefix_list);
+
     unique_ptr<wchar_t[]> rv = env_list_to_block(env_list);
     return rv;
 }
