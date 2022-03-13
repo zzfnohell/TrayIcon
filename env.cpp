@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "iniconfig.h"
+#include "cfg.h"
 using namespace std;
 
 constexpr WCHAR ENV_DELIMITER = L'=';

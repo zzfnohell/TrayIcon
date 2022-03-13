@@ -5,7 +5,7 @@
 #include <assert.h>
 #include <cstdio>
 
-#include "iniconfig.h"
+#include "cfg.h"
 #include "env.h"
 #include "wnd.h"
 using namespace std;

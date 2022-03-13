@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "iniconfig.h"
+#include "cfg.h"
 
 #define SECTION_UI L"UI"
 #define SECTION_APP L"App"
