@@ -2,14 +2,16 @@
 //
 
 #include "stdafx.h"
-#include "resource.h"
 #include <assert.h>
 #include <cstdio>
 
 #include "iniconfig.h"
 #include "env.h"
-
+#include "wnd.h"
 using namespace std;
+
+#define IDC_START 2001
+#define IDC_STOP  2002
 
 #define SWM_TRAYMSG WM_APP//        the message ID sent to our window
 
@@ -37,6 +39,7 @@ static void ShowContextMenu(HWND hWnd);
 HANDLE hJob;
 HANDLE hNewWaitHandle;
 bool createJob = false;
+LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 
 
 LPWSTR format_last_error(const wstring& msg) {
@@ -263,6 +266,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
 {
     MSG msg;
     HACCEL hAccelTable;
+    register_class(hInstance, WndProc);
     config.Initialize();
 
     // Perform application initialization:
@@ -271,19 +275,15 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
         return FALSE;
     }
 
-    hAccelTable = LoadAccelerators(hInstance, (LPCTSTR)IDC_STEALTHDIALOG);
-
     // Main message loop:
-    while (GetMessage(&msg, NULL, 0, 0))
+    BOOL fGotMessage;
+    while ((fGotMessage = GetMessage(&msg, (HWND)NULL, 0, 0)) != 0 && fGotMessage != -1)
     {
-        if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg) ||
-            !IsDialogMessage(msg.hwnd, &msg))
-        {
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
-        }
+        TranslateMessage(&msg);
+        DispatchMessage(&msg);
     }
 
+    unregister_class(hInstance);
     return (int)msg.wParam;
 }
 
@@ -291,17 +291,17 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
 BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
     // prepare for XP style controls
-    InitCommonControls();
-    // store instance handle and create dialog
-    kInst = hInstance;
-    kDlg = CreateDialog(
-        hInstance,
-        MAKEINTRESOURCE(IDD_DLG_DIALOG),
-        NULL,
-        (DLGPROC)DlgProc);
+    //InitCommonControls();
 
+    kInst = hInstance;
+
+    kDlg = create_window(hInstance, nCmdShow);
+    assert(kDlg);
     if (!kDlg)
     {
+        LPWSTR msg = format_last_error(L"Create window failed.");
+        MessageBox(NULL, msg, L"ERROR", MB_ICONERROR | MB_OK);
+        delete[] msg;
         return FALSE;
     }
 
@@ -334,7 +334,6 @@ BOOL OnInitDialog(HWND hWnd)
     if (HMENU h_menu = GetSystemMenu(hWnd, FALSE))
     {
         AppendMenu(h_menu, MF_SEPARATOR, 0, NULL);
-        AppendMenu(h_menu, MF_STRING, IDM_ABOUT, _T("About"));
     }
 
     auto hIcon = (HICON)LoadImage(
@@ -383,21 +382,20 @@ void ShowContextMenu(HWND hWnd)
     }
 }
 
+HWND wMsg = NULL;
 void UpdateInfoText(LPCWSTR s)
 {
-    HWND wnd = GetDlgItem(kDlg, IDC_STATIC_INFO);
-    SetWindowText(wnd, s);
+    SetWindowText(wMsg, s);
     delete[] s;
 }
 
 void UpdateInfoTextByConst(LPCWSTR s)
 {
-    HWND wnd = GetDlgItem(kDlg, IDC_STATIC_INFO);
-    SetWindowText(wnd, s);
+    SetWindowText(wMsg, s);
 }
 
-// Message handler for the app
-INT_PTR CALLBACK DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+
+LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     int wm_id;
 
@@ -444,10 +442,6 @@ INT_PTR CALLBACK DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             ShowWindow(hWnd, SW_HIDE);
             return 1;
         }
-        else if (wParam == IDM_ABOUT)
-        {
-            DialogBox(kInst, (LPCTSTR)IDD_ABOUTBOX, hWnd, (DLGPROC)About);
-        }
 
         break;
 
@@ -480,17 +474,27 @@ INT_PTR CALLBACK DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             DestroyWindow(hWnd);
             break;
 
-        case IDM_ABOUT:
-            DialogBox(kInst, (LPCTSTR)IDD_ABOUTBOX, hWnd, (DLGPROC)About);
-            break;
         default:
             break;
         }
 
         return 1;
 
-    case WM_INITDIALOG:
-        return OnInitDialog(hWnd);
+    case WM_CREATE:
+        wMsg = CreateWindow(
+            L"STATIC",
+            L"Ready to Start",
+            WS_VISIBLE | WS_CHILD,
+            50, 20, 300, 60,
+            hWnd, NULL, 0, NULL);
+        CreateWindow(
+            L"BUTTON", L"开始", WS_VISIBLE | WS_CHILD,
+            80, 120, 100, 20, hWnd, (HMENU)IDC_START, 0, NULL);
+        CreateWindow(
+            L"BUTTON", L"停止", WS_VISIBLE | WS_CHILD,
+            200, 120, 100, 20, hWnd, (HMENU)IDC_STOP, 0, NULL);
+        OnInitDialog(hWnd);
+        break;
 
     case WM_CLOSE:
         ShowWindow(hWnd, SW_HIDE);
@@ -508,28 +512,5 @@ INT_PTR CALLBACK DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         break;
     }
 
-    return 0;
-}
-
-// Message handler for about box.
-LRESULT CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
-{
-    switch (message)
-    {
-    case WM_INITDIALOG:
-        return TRUE;
-
-    case WM_COMMAND:
-        if (LOWORD(wParam) == IDOK || LOWORD(wParam) == IDCANCEL)
-        {
-            EndDialog(hDlg, LOWORD(wParam));
-            return TRUE;
-        }
-
-        break;
-    default:
-        break;
-    }
-
-    return FALSE;
+    return DefWindowProc(hWnd, message, wParam, lParam);
 }
