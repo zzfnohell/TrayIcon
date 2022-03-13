@@ -112,7 +112,7 @@ void parse_env(list<wstring>& env_list) {
     assert(rt);
 }
 
-wchar_t* env_list_to_block(const list<wstring>& env_list) {
+unique_ptr<wchar_t[]> env_list_to_block(const list<wstring>& env_list) {
     size_t total = 0;
     for (const wstring& s : env_list) {
         total += s.length() + 1;
@@ -120,9 +120,9 @@ wchar_t* env_list_to_block(const list<wstring>& env_list) {
 
     total += 1;
 
-    wchar_t* rv = new wchar_t[total];
+    unique_ptr<wchar_t[]> rv = make_unique<wchar_t[]>(total);
 
-    wchar_t* p = rv;
+    wchar_t* p = rv.get();
     for (const wstring& s : env_list) {
         size_t size = s.length();
         s.copy(p, size);
@@ -134,7 +134,7 @@ wchar_t* env_list_to_block(const list<wstring>& env_list) {
     return rv;
 }
 
-wchar_t* build_env_block()
+unique_ptr<wchar_t[]> build_env_block()
 {
     list<wstring> env_list{};
     list<wstring> replace_list{};
@@ -143,6 +143,6 @@ wchar_t* build_env_block()
     parse_env(env_list);
     replace_env(env_list, replace_list);
     prefix_env(env_list, replace_list);
-    wchar_t* rv = env_list_to_block(env_list);
+    unique_ptr<wchar_t[]> rv = env_list_to_block(env_list);
     return rv;
 }

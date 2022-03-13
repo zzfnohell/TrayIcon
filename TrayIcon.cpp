@@ -134,7 +134,7 @@ void ShowNotificationData(bool on)
 
 constexpr int APP_ARGS_LENGTH = 2048;
 
-wstring BuildCmdLine()
+unique_ptr<wchar_t[]> BuildCmdLine()
 {
     WCHAR app_path[MAX_PATH];
     CIniConfig::GetAppPath(app_path);
@@ -144,7 +144,14 @@ wstring BuildCmdLine()
     delete[] app_args;
     wstringstream wss;
     wss << app_path << " " << app_args;
-    return wss.str();
+
+    wstring s = wss.str();
+
+    size_t word_count = s.length() + 1;
+    unique_ptr<wchar_t[]> cmd_line = make_unique<wchar_t[]>(word_count);
+    s.copy(cmd_line.get(), word_count - 1);
+    s[word_count - 1] = L'\0';
+    return cmd_line;
 }
 
 void StartProcess()
@@ -184,27 +191,21 @@ void StartProcess()
     WCHAR startup_dir[MAX_PATH];
     CIniConfig::GetWorkDirPath(startup_dir);
 
-    wstring cmd_line = BuildCmdLine();
-    size_t word_count = cmd_line.length() + 1;
-    LPWSTR cmd = new wchar_t[word_count];
-    wcscpy_s(cmd, word_count, cmd_line.c_str());
+    unique_ptr<wchar_t[]>  cmd_line = BuildCmdLine();
 
-    wchar_t* env_block = build_env_block();
+    unique_ptr<wchar_t[]> env_block = build_env_block();
     rc = CreateProcess(
         NULL, // No module name (use command line)
-        cmd, // Command line
+        cmd_line.get(), // Command line
         NULL, // Process handle not inheritable
         NULL, // Thread handle not inheritable
         TRUE, // Set handle inheritance to FALSE
         0, // No creation flags
-        env_block, // Use parent's environment block
+        env_block.get(), // Use parent's environment block
         startup_dir, // Use parent's starting directory
         &si, // Pointer to STARTUPINFO structure
         &pi // Pointer to PROCESS_INFORMATION structure
     );
-
-    delete[] cmd;
-    delete[] env_block;
 
     if (!rc)
     {
@@ -277,9 +278,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
 {
     MSG msg;
     HACCEL hAccelTable;
-    config.Initialize();
-
-    LPVOID penv = build_env_block();
+    config.Initialize(); 
 
     // Perform application initialization:
     if (!InitInstance(hInstance, nCmdShow))
