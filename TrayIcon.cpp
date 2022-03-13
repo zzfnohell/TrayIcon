@@ -132,18 +132,19 @@ void ShowNotificationData(bool on)
     DestroyIcon(icon);
 }
 
-void BuildCmdLine(WCHAR* cmd, size_t size)
-{
-    WCHAR startup_dir[MAX_PATH];
-    CIniConfig::GetWorkDirPath(startup_dir);
+constexpr int APP_ARGS_LENGTH = 2048;
 
+wstring BuildCmdLine()
+{
     WCHAR app_path[MAX_PATH];
     CIniConfig::GetAppPath(app_path);
 
-    WCHAR app_args[INI_VALUE_BUFFER_SIZE];
-    CIniConfig::GetAppArgs(app_args, INI_VALUE_BUFFER_SIZE);
-
-    wsprintf(cmd, L"%ls %ls", app_path, app_args);
+    WCHAR* app_args = new WCHAR[APP_ARGS_LENGTH];
+    CIniConfig::GetAppArgs(app_args, APP_ARGS_LENGTH);
+    delete[] app_args;
+    wstringstream wss;
+    wss << app_path << " " << app_args;
+    return wss.str();
 }
 
 void StartProcess()
@@ -183,11 +184,14 @@ void StartProcess()
     WCHAR startup_dir[MAX_PATH];
     CIniConfig::GetWorkDirPath(startup_dir);
 
-    TCHAR cmd_line[MAX_PATH + INI_VALUE_BUFFER_SIZE] = { 0 };
-    BuildCmdLine(cmd_line, MAX_PATH);
+    wstring cmd_line = BuildCmdLine();
+    size_t word_count = cmd_line.length() + 1;
+    LPWSTR cmd = new wchar_t[word_count];
+    wcscpy_s(cmd, word_count, cmd_line.c_str());
+
     rc = CreateProcess(
         NULL, // No module name (use command line)
-        cmd_line, // Command line
+        cmd, // Command line
         NULL, // Process handle not inheritable
         NULL, // Thread handle not inheritable
         TRUE, // Set handle inheritance to FALSE
@@ -197,6 +201,8 @@ void StartProcess()
         &si, // Pointer to STARTUPINFO structure
         &pi // Pointer to PROCESS_INFORMATION structure
     );
+
+    delete[] cmd;
 
     if (!rc)
     {

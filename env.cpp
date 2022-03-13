@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "iniconfig.h"
 using namespace std;
 
 constexpr WCHAR ENV_DELIMITER = L'=';
@@ -10,154 +11,43 @@ inline int strlen_with_terminal(int v)
 }
 
 
-LPTSTR SearchEnv(LPTSTR env, LPTSTR key, int key_size)
-{
-    LPTSTR p = env;
-    while (*p)
-    {
-        int i = 0;
-        while (p[i] == key[i] && i < key_size)
-        {
-            i++;
-        }
 
-        if (i < key_size)
-        {
-            const int length = lstrlen(p);
-            p += strlen_with_terminal(length);
-        }
-        else
-        {
-            return p;
-        }
-    }
-
-    return NULL;
-}
-
-
-void ReplaceEnvVar(LPTSTR env_dst, LPTSTR s, size_t dst_size)
-{
-    HRESULT hr;
-    LPTSTR p = s;
-    LPTSTR dst = env_dst;
-    size_t n = dst_size;
-    WCHAR env_replace[111];
-    WCHAR kvp[11];
-
-    while (*p)
-    {
-        const int length = lstrlen(p);
-        if (*p == ENV_DELIMITER)
-        {
-            hr = StringCchCopy(dst, n, p);
-            assert(SUCCEEDED(hr));
-
-            assert(n >= strlen_with_terminal(length));
-            n -= strlen_with_terminal(length);
-            dst += strlen_with_terminal(length);
-        }
-        else
-        {
-            WCHAR* b = wcspbrk(p, ENV_DELIMITER_S);
-            LPTSTR rp = NULL;
-            if (b) {
-                size_t key_size = b - p;
-                rp = SearchEnv(env_replace, p, key_size);
-            }
-
-            if (rp)
-            {
-                hr = StringCchCopy(dst, n, rp);
-                assert(SUCCEEDED(hr));
-                size_t new_env_length = lstrlen(rp);
-                assert(n >= strlen_with_terminal(length));
-
-                n -= strlen_with_terminal(new_env_length);
-                dst += strlen_with_terminal(new_env_length);
-            }
-            else
-            {
-                hr = StringCchCopy(dst, n, p);
-                assert(SUCCEEDED(hr));
-
-                assert(n >= strlen_with_terminal(length));
-                n -= strlen_with_terminal(length);
-                dst += strlen_with_terminal(length);
+void replace_env(list<wstring>& env_list, list<wstring>& config_list) {
+    wregex rgx(L"(\\w+)=(.*)");
+    constexpr int match_size = 3;
+    constexpr int name_match_index = 1;
+    constexpr int value_match_index = 2;
+    for (wstring& s : env_list) {
+        wsmatch matches;
+        if (regex_search(s, matches, rgx)) {
+            if (matches.size() == match_size) {
+                const wstring& name = matches[name_match_index].str();
+                const wstring& value = matches[value_match_index].str();
             }
         }
-
-        p += strlen_with_terminal(length);
     }
 }
 
-void PrefixEnvVar(LPTSTR env_dst, LPTSTR s, size_t dst_size)
-{
-    HRESULT hr;
-    LPTSTR p = s;
-    LPTSTR dst = env_dst;
-    size_t n = dst_size;
-    WCHAR env_prefix[11];
-    while (*p)
-    {
-        const int length = lstrlen(p);
-        if (*p == ENV_DELIMITER)
-        {
-            hr = StringCchCopy(dst, n, p);
-            assert(SUCCEEDED(hr));
-
-            assert(n >= strlen_with_terminal(length));
-            n -= strlen_with_terminal(length);
-            dst += strlen_with_terminal(length);
-        }
-        else
-        {
-            WCHAR* b = wcspbrk(p, ENV_DELIMITER_S);
-            LPTSTR rp = NULL;
-            WCHAR* v = NULL;
-            if (b) {
-                v = b + 1;
-                const size_t key_size = b - p;
-                rp = SearchEnv(env_prefix, p, key_size);
-            }
-
-            if (rp)
-            {
-                if (v)
-                {
-
-                }
-                hr = StringCchCopy(dst, n, rp);
-                assert(SUCCEEDED(hr));
-                size_t new_env_length = lstrlen(rp);
-                assert(n >= strlen_with_terminal(length));
-
-                n -= strlen_with_terminal(new_env_length);
-                dst += strlen_with_terminal(new_env_length);
-            }
-            else
-            {
-                hr = StringCchCopy(dst, n, p);
-                assert(SUCCEEDED(hr));
-
-                assert(n >= strlen_with_terminal(length));
-                n -= strlen_with_terminal(length);
-                dst += strlen_with_terminal(length);
-            }
-        }
-
-        p += strlen_with_terminal(length);
-    }
-}
-
-void parse_env(list<wstring>& list) {
+void parse_env(list<wstring>& env_list) {
     LPWCH  env = GetEnvironmentStrings();
+    LPWCH p = env;
+    while (*p) {
+        size_t n = wcslen(p);
+        wstring s{ p, n };
+        env_list.emplace_back(s);
+        p += n + 1;
+    }
 
+    BOOL rt = FreeEnvironmentStrings(env);
+    assert(rt);
 }
+
 LPVOID build_env_block()
 {
     list<wstring> env_list{};
+    list<wstring> config_list{};
+    CIniConfig::GetEnvList(config_list);
     parse_env(env_list);
-
+    replace_env(env_list, config_list);
     return NULL;
 }
