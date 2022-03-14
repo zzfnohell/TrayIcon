@@ -114,6 +114,10 @@
       <ProgramDatabaseFile>$(OutDir)StealthDialog.pdb</ProgramDatabaseFile>
       <SubSystem>Windows</SubSystem>
       <AdditionalDependencies>Shlwapi.lib;Comctl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <HeapReserveSize>0x4000</HeapReserveSize>
+      <StackReserveSize>0x1000</StackReserveSize>
+      <StackCommitSize>0x1000</StackCommitSize>
+      <HeapCommitSize>0x1000</HeapCommitSize>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
