@@ -1,27 +1,27 @@
 #pragma once
 #include <list>
-
+#include <filesystem>
 class CIniConfig
 {
 public:
-    CIniConfig();
-    virtual ~CIniConfig() = default;
+	CIniConfig();
+	virtual ~CIniConfig() = default;
 
-    void Initialize();
+	void Initialize();
 
-    static void GetModuleDirectory(WCHAR* val);
-    static void GetOnIconPath(WCHAR* val);
-    static void GetOffIconPath(WCHAR* val);
-    static void GetAppPath(WCHAR* val);
-    static void GetAppArgs(WCHAR* val, DWORD size);
-    static void GetWorkDirPath(WCHAR* val);
-    static void GetIniPath(WCHAR* val);
-    static void GetEnv(WCHAR* val, DWORD size);
-    static void GetEnvPrefix(WCHAR* val, DWORD size);
-    static void GetEnvList(std::list<std::wstring>& env_list);
-    static void GetEnvPrefixList(std::list<std::wstring>& env_list);
+	static std::filesystem::path GetModuleDirectory();
+	static std::filesystem::path GetOnIconPath();
+	static std::filesystem::path GetOffIconPath();
+	static std::filesystem::path GetAppPath();
+	static std::filesystem::path GetWorkDirPath();
+	static std::filesystem::path GetIniPath();
+
+	static std::wstring GetAppArgs();
+	static void GetEnvList(std::list<std::wstring>& env_list);
+	static void GetEnvPrefixList(std::list<std::wstring>& env_list);
+	static bool GetAppHide();
 private:
-    static void GetSectionList(LPCWSTR section, std::list<std::wstring>& env_list);
-    static void GetPathValueFromIni(LPCWSTR section, LPCWSTR key, LPCWSTR default_value, WCHAR* val);
-    static void GetStringValueFromIni(LPCWSTR section, LPCWSTR key, LPCWSTR default_value, WCHAR* val, DWORD size);
+	static void GetSectionList(LPCWSTR section, std::list<std::wstring>& env_list);
+	static std::filesystem::path GetPathValueFromIni(LPCWSTR section, LPCWSTR key, LPCWSTR default_value);
+	static std::wstring GetStringValueFromIni(LPCWSTR section, LPCWSTR key, LPCWSTR default_value);
 };
