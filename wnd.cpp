@@ -11,12 +11,12 @@ void register_class(HINSTANCE hInstance, WNDPROC WndProc) {
     wcex.cbClsExtra = 0;
     wcex.cbWndExtra = 0;
     wcex.hInstance = hInstance;
-    wcex.hIcon = NULL;
-    wcex.hCursor = LoadCursor(NULL, IDC_ARROW);
+    wcex.hIcon = nullptr;
+    wcex.hCursor = LoadCursor(nullptr, IDC_ARROW);
     wcex.hbrBackground = (HBRUSH)(CTLCOLOR_DLG);
-    wcex.lpszMenuName = NULL;
+    wcex.lpszMenuName = nullptr;
     wcex.lpszClassName = kClassName;
-    wcex.hIconSm = NULL;
+    wcex.hIconSm = nullptr;
     BOOL rc = RegisterClassEx(&wcex);
     assert(rc);
 }

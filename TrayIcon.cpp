@@ -27,37 +27,36 @@ using namespace std::filesystem;
 CIniConfig config{};
 
 // Global Variables:
-HINSTANCE kInst; // current instance
-
+HINSTANCE gInstance; // current instance
+HANDLE hJob;
+HANDLE hNewWaitHandle;
+bool createJob = false;
 NOTIFYICONDATA kData;
-
 HWND kDlg;
+
 // Forward declarations of functions included in this code module:
 static BOOL InitInstance(HINSTANCE, int);
 static BOOL OnInitDialog(HWND hWnd);
 static void ShowContextMenu(HWND hWnd);
 
-HANDLE hJob;
-HANDLE hNewWaitHandle;
-bool createJob = false;
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 
 
 LPWSTR format_last_error(const wstring& msg) {
 	wostringstream oss;
-	DWORD dwErrorCode = GetLastError();
+	const DWORD dwErrorCode = GetLastError();
 	WCHAR pBuffer[MAX_PATH];
 	DWORD cchMsg = FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-		NULL,  /* (not used with FORMAT_MESSAGE_FROM_SYSTEM) */
+	                             nullptr,  /* (not used with FORMAT_MESSAGE_FROM_SYSTEM) */
 		dwErrorCode,
 		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
 		pBuffer,
 		MAX_PATH,
-		NULL);
+	nullptr);
 
 	oss << msg << endl << L"(" << dwErrorCode << ")" << " " << pBuffer;
 	wstring s = oss.str();
-	rsize_t word_count = s.length() + 1;
+	const rsize_t word_count = s.length() + 1;
 	wchar_t* p = new wchar_t[word_count];
 	wcscpy_s(p, word_count, s.c_str());
 	return p;
@@ -67,7 +66,7 @@ LPWSTR format_process_id(const wstring& msg, DWORD process_id) {
 	wostringstream oss;
 	oss << msg << " " << L"(" << GetLastError() << ")" << endl;
 	wstring s = oss.str();
-	rsize_t word_count = s.length() + 1;
+	const rsize_t word_count = s.length() + 1;
 	wchar_t* p = new wchar_t[word_count];
 	wcscpy_s(p, word_count, s.c_str());
 	return p;
@@ -105,13 +104,13 @@ void ShowNotificationData(bool on)
 
 	UINT flags = LR_MONOCHROME;
 	flags |= LR_LOADFROMFILE;
-	const auto icon = (HICON)LoadImage(
-		NULL,
+	const auto icon = static_cast<HICON>(LoadImage(
+		nullptr,
 		image_path.c_str(),
 		IMAGE_ICON,
 		GetSystemMetrics(SM_CXSMICON),
 		GetSystemMetrics(SM_CYSMICON),
-		flags);
+		flags));
 	nid.hIcon = icon;
 	nid.uID = kData.uID;
 	nid.hWnd = kData.hWnd;
@@ -119,8 +118,6 @@ void ShowNotificationData(bool on)
 	Shell_NotifyIcon(NIM_MODIFY, &nid);
 	DestroyIcon(icon);
 }
-
-constexpr int APP_ARGS_LENGTH = 2048;
 
 unique_ptr<wchar_t[]> BuildCmdLine()
 {
@@ -149,7 +146,7 @@ void StartProcess()
 	ZeroMemory(&pi, sizeof(pi));
 	BOOL rc;
 
-	HANDLE hJobObject = CreateJobObject(NULL, NULL);
+	HANDLE hJobObject = CreateJobObject(nullptr, nullptr);
 	assert(hJobObject != NULL);
 
 	JOBOBJECT_EXTENDED_LIMIT_INFORMATION jeli{};
@@ -183,10 +180,10 @@ void StartProcess()
 
 	unique_ptr<wchar_t[]> env_block = build_env_block();
 	rc = CreateProcess(
-		NULL, // No module name (use command line)
+		nullptr, // No module name (use command line)
 		cmd_line.get(), // Command line
-		NULL, // Process handle not inheritable
-		NULL, // Thread handle not inheritable
+		nullptr, // Process handle not inheritable
+		nullptr, // Thread handle not inheritable
 		TRUE, // Set handle inheritance to FALSE
 		CREATE_UNICODE_ENVIRONMENT, // No creation flags
 		env_block.get(), // Use parent's environment block
@@ -272,27 +269,27 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
 
 	// Main message loop:
 	BOOL fGotMessage;
-	while ((fGotMessage = GetMessage(&msg, (HWND)NULL, 0, 0)) != 0 && fGotMessage != -1)
+	while ((fGotMessage = GetMessage(&msg, (HWND)nullptr, 0, 0)) != 0 && fGotMessage != -1)
 	{
 		TranslateMessage(&msg);
 		DispatchMessage(&msg);
 	}
 
 	unregister_class(hInstance);
-	return (int)msg.wParam;
+	return static_cast<int>(msg.wParam);
 }
 
 //  Initialize the window and tray icon
 BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
-	kInst = hInstance;
+	gInstance = hInstance;
 
 	kDlg = create_window(hInstance, nCmdShow);
 	assert(kDlg);
 	if (!kDlg)
 	{
 		LPWSTR msg = format_last_error(L"Create window failed.");
-		MessageBox(NULL, msg, L"ERROR", MB_ICONERROR | MB_OK);
+		MessageBox(nullptr, msg, L"ERROR", MB_ICONERROR | MB_OK);
 		delete[] msg;
 		return FALSE;
 	}
@@ -302,17 +299,17 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	const path image_path = CIniConfig::GetOffIconPath();
 
 	constexpr UINT flags = LR_LOADFROMFILE;
-	const auto icon = (HICON)LoadImage(
-		NULL,
+	const auto icon = static_cast<HICON>(LoadImage(
+		nullptr,
 		image_path.c_str(),
 		IMAGE_ICON,
 		GetSystemMetrics(SM_CXSMICON),
 		GetSystemMetrics(SM_CYSMICON),
-		flags);
+		flags));
 	kData.hIcon = icon;
 	Shell_NotifyIcon(NIM_ADD, &kData);
 	DestroyIcon(icon);
-	kData.hIcon = NULL;
+	kData.hIcon = nullptr;
 	StartProcess();
 	return TRUE;
 }
@@ -321,20 +318,20 @@ BOOL OnInitDialog(HWND hWnd)
 {
 	const path image_path = CIniConfig::GetOffIconPath();
 
-	if (HMENU h_menu = GetSystemMenu(hWnd, FALSE))
+	if (const HMENU h_menu = GetSystemMenu(hWnd, FALSE))
 	{
-		AppendMenu(h_menu, MF_SEPARATOR, 0, NULL);
+		AppendMenu(h_menu, MF_SEPARATOR, 0, nullptr);
 	}
 
-	auto hIcon = (HICON)LoadImage(
-		NULL,
+	auto hIcon = static_cast<HICON>(LoadImage(
+		nullptr,
 		image_path.c_str(),
 		IMAGE_ICON,
 		GetSystemMetrics(SM_CXSMICON),
 		GetSystemMetrics(SM_CYSMICON),
-		LR_LOADFROMFILE);
-	SendMessage(hWnd, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
-	SendMessage(hWnd, WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
+		LR_LOADFROMFILE));
+	SendMessage(hWnd, WM_SETICON, ICON_BIG, reinterpret_cast<LPARAM>(hIcon));
+	SendMessage(hWnd, WM_SETICON, ICON_SMALL, reinterpret_cast<LPARAM>(hIcon));
 	DestroyIcon(hIcon);
 	return TRUE;
 }
@@ -367,12 +364,12 @@ void ShowContextMenu(HWND hWnd)
 			pt.y,
 			0,
 			hWnd,
-			NULL);
+		nullptr);
 		DestroyMenu(h_menu);
 	}
 }
 
-HWND wMsg = NULL;
+HWND wMsg = nullptr;
 void UpdateInfoText(LPCWSTR s)
 {
 	SetWindowText(wMsg, s);
@@ -388,7 +385,6 @@ void UpdateInfoTextByConst(LPCWSTR s)
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	int wm_id;
-
 	switch (message)
 	{
 	case SWM_TRAYMSG:
@@ -416,7 +412,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		if (hJob)
 		{
 			CloseHandle(hJob);
-			hJob = NULL;
+			hJob = nullptr;
 		}
 		ShowNotificationData(false);
 
@@ -457,7 +453,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 		case IDC_STOP:
 			StopProcess();
-			hJob = NULL;
+			hJob = nullptr;
 			break;
 
 		case SWM_EXIT:
@@ -495,7 +491,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		kData.uFlags = 0;
 		Shell_NotifyIcon(NIM_DELETE, &kData);
 		StopProcess();
-		hJob = NULL;
+		hJob = nullptr;
 		PostQuitMessage(0);
 		break;
 	default:

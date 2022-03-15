@@ -32,7 +32,7 @@ using namespace std::filesystem;
 path get_module_file_path()
 {
 	const unique_ptr<WCHAR[]> buf = make_unique<WCHAR[]>(MAX_PATH);
-	const DWORD size = GetModuleFileName(NULL, buf.get(), MAX_PATH);
+	const DWORD size = GetModuleFileName(nullptr, buf.get(), MAX_PATH);
 	assert(size > 0);
 
 	path p{ wstring{ buf.get(), size} };
@@ -133,7 +133,7 @@ path CIniConfig::GetOffIconPath()
 
 path CIniConfig::GetAppPath()
 {
-	path rv = GetPathValueFromIni(SECTION_APP, KEY_APP_PATH, KEY_APP_PATH_DEFAULT);
+	path rv = GetPathValueFromIni(SECTION_APP, KEY_APP_PATH, nullptr);
 	return rv;
 }
 
@@ -154,7 +154,7 @@ void CIniConfig::GetSectionList(LPCWSTR section, std::list<std::wstring>& env_li
 	assert(read_size <= kBufSize - 2);
 	WCHAR* p = buf.get();
 	while (*p) {
-		size_t n = wcslen(p);
+		const size_t n = wcslen(p);
 		wstring s{ p, n };
 		env_list.emplace_back(s);
 		p += n + 1;

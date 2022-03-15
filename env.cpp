@@ -99,10 +99,10 @@ void replace_env(list<wstring>& env_list, const list<wstring>& config_list) {
 
 
 void parse_env(list<wstring>& env_list) {
-    LPWCH  env = GetEnvironmentStrings();
+    const LPWCH  env = GetEnvironmentStrings();
     LPWCH p = env;
     while (*p) {
-        size_t n = wcslen(p);
+        const size_t n = wcslen(p);
         wstring s{ p, n };
         env_list.emplace_back(s);
         p += n + 1;
@@ -124,7 +124,7 @@ unique_ptr<wchar_t[]> env_list_to_block(const list<wstring>& env_list) {
 
     wchar_t* p = rv.get();
     for (const wstring& s : env_list) {
-        size_t size = s.length();
+        const size_t size = s.length();
         s.copy(p, size);
         p += size;
         *p = L'\0';
