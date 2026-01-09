@@ -185,7 +185,6 @@ void StartProcess()
 
     const path startup_dir = state.GetAppWorkDir();
     const list<wstring> custom_env_list = state.GetCustomEnvList();
-
     unique_ptr<wchar_t[]> cmd_line = BuildCmdLine();
 
     unique_ptr<wchar_t[]> env_block = build_env_block(custom_env_list);
@@ -270,6 +269,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
     MSG msg;
     register_class(hInstance, WndProc);
     state.Initialize();
+    state.RunScript();
 
     // Perform application initialization:
     if (!InitInstance(hInstance, nCmdShow))
