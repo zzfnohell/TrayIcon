@@ -5,11 +5,11 @@
 #include <assert.h>
 #include <cstdio>
 
-#include "cfg.h"
-#include "env.h"
+#include "state.h"
 #include "wnd.h"
-using namespace std;
 using namespace std::filesystem;
+
+using namespace std;
 
 #define IDC_START 2001
 #define IDC_STOP  2002
@@ -24,7 +24,7 @@ using namespace std::filesystem;
 #define UWM_CHILDQUIT    (WM_USER + 5)
 #define UWM_CHILDCREATE    (WM_USER + 6)
 
-CConfig config{};
+CState state{};
 
 // Global Variables:
 HINSTANCE gInstance; // current instance
@@ -102,7 +102,7 @@ void ShowNotificationData(bool on)
     NOTIFYICONDATA nid;
 
     ZeroMemory(&nid, sizeof(nid));
-    const path image_path = on ? CConfig::GetOnIconPath() : CConfig::GetOffIconPath();
+    const path image_path = on ? state.GetOnIconPath() : state.GetOffIconPath();
 
     UINT flags = LR_MONOCHROME;
     flags |= LR_LOADFROMFILE;
@@ -123,9 +123,9 @@ void ShowNotificationData(bool on)
 
 unique_ptr<wchar_t[]> BuildCmdLine()
 {
-    const path app_path = CConfig::GetAppPath();
+    const path app_path = state.GetAppPath();
 
-    const wstring app_args = CConfig::GetAppArgs();
+    const wstring app_args = state.GetAppArgs();
 
     wstringstream wss;
     wss << app_path << " " << app_args;
@@ -170,13 +170,13 @@ void StartProcess()
     }
 
     si.cb = sizeof(si);
-    if (CConfig::GetAppHide())
+    if (state.GetAppHide())
     {
         si.dwFlags = STARTF_USESHOWWINDOW;
         si.wShowWindow = SW_HIDE;
     }
 
-    const path startup_dir = CConfig::GetWorkDirPath();
+    const path startup_dir = state.GetAppWorkDir();
 
     unique_ptr<wchar_t[]> cmd_line = BuildCmdLine();
 
@@ -261,7 +261,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
 {
     MSG msg;
     register_class(hInstance, WndProc);
-    config.Initialize();
+    state.Initialize();
 
     // Perform application initialization:
     if (!InitInstance(hInstance, nCmdShow))
@@ -298,7 +298,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
     InitializeNotificationData();
 
-    const path image_path = CIniConfig::GetOffIconPath();
+    const path image_path = state.GetOffIconPath();
 
     constexpr UINT flags = LR_LOADFROMFILE;
     const auto icon = static_cast<HICON>(LoadImage(
@@ -318,7 +318,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
 BOOL OnInitDialog(HWND hWnd)
 {
-    const path image_path = CIniConfig::GetOffIconPath();
+    const path image_path = state.GetOffIconPath();
 
     if (const HMENU h_menu = GetSystemMenu(hWnd, FALSE))
     {

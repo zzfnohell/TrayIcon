@@ -37,6 +37,7 @@
 #include <regex>
 #include <ranges>
 #include <optional>
+#include <filesystem>
 
 
 #include <lua.h>

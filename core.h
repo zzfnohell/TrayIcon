@@ -1,15 +1,8 @@
 #pragma once
 #include <filesystem>
 
-class CCore
-{
-public:
-    CCore();
-    ~CCore();
+#include <lua.h>
+#include <lualib.h>
+#include <lauxlib.h>
 
-    void Initialize();
-    static std::wstring GetAppArgs();
-
-private:
-    lua_State* L{nullptr};
-};
+void core_load_libs(lua_State* L);
