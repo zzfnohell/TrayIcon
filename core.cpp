@@ -42,7 +42,7 @@ static int luaopen_system(lua_State* L)
 	return 1;
 }
 
-  void load_libs(lua_State* L)
+  void core_load_libs(lua_State* L)
 {
 	luaL_requiref(L, "core", luaopen_system, 1);
 }

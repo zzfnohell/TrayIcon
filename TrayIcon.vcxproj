@@ -175,6 +175,7 @@
       <LanguageStandard>stdcpp20</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
+      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -203,14 +204,6 @@
     <ClInclude Include="state.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="wnd.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="TrayIcon.ini">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="TrayIcon.ini" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 </Project>
