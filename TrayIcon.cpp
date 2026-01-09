@@ -25,6 +25,12 @@ using namespace std;
 #define UWM_CHILDQUIT    (WM_USER + 5)
 #define UWM_CHILDCREATE    (WM_USER + 6)
 
+constexpr wchar_t BUTTON_CLASS[] = L"BUTTON";
+constexpr wchar_t STATIC_CLASS[] = L"STATIC";
+constexpr wchar_t WND_TITLE[] = L"Ready to Start";
+constexpr wchar_t WND_BUTTON_START_TEXT[] = L"开始";
+constexpr wchar_t WND_BUTTON_STOP_TEXT[] = L"停止";
+
 CState state{};
 
 // Global Variables:
@@ -473,17 +479,25 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
     case WM_CREATE:
         wMsg = CreateWindow(
-            L"STATIC",
-            L"Ready to Start",
+            STATIC_CLASS,
+            WND_TITLE,
             WS_VISIBLE | WS_CHILD,
             50, 20, 300, 60,
             hWnd, NULL, 0, NULL);
+
         CreateWindow(
-            L"BUTTON", L"开始", WS_VISIBLE | WS_CHILD,
-            80, 120, 100, 20, hWnd, (HMENU)IDC_START, 0, NULL);
+            BUTTON_CLASS,
+            WND_BUTTON_START_TEXT,
+            WS_VISIBLE | WS_CHILD,
+            80, 120, 100, 20,
+            hWnd, (HMENU)IDC_START, 0, NULL);
+
         CreateWindow(
-            L"BUTTON", L"停止", WS_VISIBLE | WS_CHILD,
-            200, 120, 100, 20, hWnd, (HMENU)IDC_STOP, 0, NULL);
+            BUTTON_CLASS,
+            WND_BUTTON_STOP_TEXT,
+            WS_VISIBLE | WS_CHILD,
+            200, 120, 100, 20,
+            hWnd, (HMENU)IDC_STOP, 0, NULL);
         OnInitDialog(hWnd);
         break;
 
