@@ -7,6 +7,7 @@
 
 #include "state.h"
 #include "wnd.h"
+#include "env.h"
 using namespace std::filesystem;
 
 using namespace std;
@@ -177,10 +178,11 @@ void StartProcess()
     }
 
     const path startup_dir = state.GetAppWorkDir();
+    const list<wstring> custom_env_list = state.GetCustomEnvList();
 
     unique_ptr<wchar_t[]> cmd_line = BuildCmdLine();
 
-    unique_ptr<wchar_t[]> env_block = build_env_block();
+    unique_ptr<wchar_t[]> env_block = build_env_block(custom_env_list);
     rc = CreateProcess(
         nullptr, // No module name (use command line)
         cmd_line.get(), // Command line

@@ -42,17 +42,6 @@ static path canonicalize(const path& p)
 	return p;
 }
 
-
-static path get_module_file_path()
-{
-	const unique_ptr<WCHAR[]> buf = make_unique<WCHAR[]>(MAX_PATH);
-	const DWORD size = GetModuleFileName(nullptr, buf.get(), MAX_PATH);
-	assert(size > 0);
-
-	path p{ wstring{buf.get(), size} };
-	return p;
-}
-
 void CState::Initialize() {
 	assert(!L);
 	L = luaL_newstate();
@@ -106,10 +95,16 @@ path CState::GetAppWorkDir() const
 }
 
 bool CState::GetAppHide() const {
-
+	return true;
 }
 
 wstring CState::GetAppArgs() const
 {
 	return L"";
+}
+
+std::list<std::wstring> CState::GetCustomEnvList() const {
+	std::list<std::wstring> rv;
+	return rv;
+ 
 }

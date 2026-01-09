@@ -16,7 +16,7 @@ public:
     std::filesystem::path GetAppWorkDir() const;
     bool GetAppHide() const;
     void  RunScript() const;
+	std::list<std::wstring> GetCustomEnvList() const;
 private:
-    lua_State* L{ nullptr };
-    std::filesystem::path  script_path_{};
+    lua_State* L{ nullptr }; 
 };

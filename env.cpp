@@ -56,7 +56,7 @@ void prefix_env(list<wstring>& env_list, list<wstring>& config_list) {
     }
 }
 
-void replace_env(list<wstring>& env_list, const list<wstring>& config_list) {
+void merge_env(list<wstring>& env_list, const list<wstring>& config_list) {
 
     for (wstring& s : env_list) {
         if (auto kvp = try_match(s)) {
@@ -134,19 +134,11 @@ unique_ptr<wchar_t[]> env_list_to_block(const list<wstring>& env_list) {
     return rv;
 }
 
-unique_ptr<wchar_t[]> build_env_block()
+unique_ptr<wchar_t[]> build_env_block(const list<wstring> &replace_list)
 {
     list<wstring> env_list{};
     parse_env(env_list);
-
-    list<wstring> replace_list{};
-    CIniConfig::GetEnvList(replace_list);
-    replace_env(env_list, replace_list);
-
-    list<wstring> prefix_list{};
-    CIniConfig::GetEnvPrefixList(prefix_list);
-    prefix_env(env_list, prefix_list);
-
+    merge_env(env_list, replace_list);
     unique_ptr<wchar_t[]> rv = env_list_to_block(env_list);
     return rv;
 }
