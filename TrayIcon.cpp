@@ -102,7 +102,7 @@ void ShowNotificationData(bool on)
     NOTIFYICONDATA nid;
 
     ZeroMemory(&nid, sizeof(nid));
-    const path image_path = on ? CIniConfig::GetOnIconPath() : CIniConfig::GetOffIconPath();
+    const path image_path = on ? CConfig::GetOnIconPath() : CConfig::GetOffIconPath();
 
     UINT flags = LR_MONOCHROME;
     flags |= LR_LOADFROMFILE;
@@ -123,9 +123,9 @@ void ShowNotificationData(bool on)
 
 unique_ptr<wchar_t[]> BuildCmdLine()
 {
-    const path app_path = CIniConfig::GetAppPath();
+    const path app_path = CConfig::GetAppPath();
 
-    const wstring app_args = CIniConfig::GetAppArgs();
+    const wstring app_args = CConfig::GetAppArgs();
 
     wstringstream wss;
     wss << app_path << " " << app_args;
