@@ -1,25 +1,44 @@
 #include "stdafx.h"
 #include "cfg.h"
+#include <map>
+
 using namespace std;
+
+using EnvEntry = std::pair<std::wstring, std::wstring>;
+using EnvMap = std::map<std::wstring, EnvEntry>;
+
 
 constexpr WCHAR ENV_DELIMITER = L'=';
 constexpr WCHAR ENV_DELIMITER_S[] = L"=";
+
+std::wstring to_lower(std::wstring s)
+{
+    std::transform(s.begin(), s.end(), s.begin(),
+        [](wchar_t c) { return std::tolower(c); });
+    return s;
+}
 
 std::wstring utf8_to_wstring(const std::string& str)
 {
     if (str.empty()) return L"";
 
     int size_needed = MultiByteToWideChar(
-        CP_UTF8, 0,
-        str.c_str(), (int)str.size(),
-        nullptr, 0
+        CP_UTF8, 
+        MB_ERR_INVALID_CHARS,
+        str.c_str(), 
+        (int)str.size(),
+        nullptr, 
+        0
     );
 
     std::wstring wstr(size_needed, 0);
     MultiByteToWideChar(
-        CP_UTF8, 0,
-        str.c_str(), (int)str.size(),
-        wstr.data(), size_needed
+        CP_UTF8, 
+        MB_ERR_INVALID_CHARS,
+        str.c_str(), 
+        (int)str.size(),
+        wstr.data(),
+        size_needed
     );
 
     return wstr;
@@ -31,7 +50,7 @@ std::string wstring_to_utf8(const std::wstring& wstr)
 
     int size_needed = WideCharToMultiByte(
         CP_UTF8,                // convert to UTF-8
-        0,                      // flags
+        MB_ERR_INVALID_CHARS,                      // flags
         wstr.c_str(),           // source
         (int)wstr.size(),       // number of wide chars
         nullptr, 0,             // no output yet
@@ -42,7 +61,7 @@ std::string wstring_to_utf8(const std::wstring& wstr)
 
     WideCharToMultiByte(
         CP_UTF8,
-        0,
+        MB_ERR_INVALID_CHARS,
         wstr.c_str(),
         (int)wstr.size(),
         str.data(),
@@ -53,26 +72,20 @@ std::string wstring_to_utf8(const std::wstring& wstr)
     return str;
 }
 optional<tuple<wstring, wstring>> try_match(const wstring& s) {
-    constexpr int match_size = 3;
-    constexpr int name_match_index = 1;
-    constexpr int value_match_index = 2;
-    static wregex rgx(L"(\\w+)=(.*)"); wsmatch matches;
-    if (regex_search(s, matches, rgx)) {
-        if (matches.size() == match_size) {
-            return optional<tuple<wstring, wstring>> {
-                {
-                    matches[name_match_index].str(), matches[value_match_index].str()
-                }
-            };
-        }
-    }
+    static const wregex rgx(L"([^=]+)=(.*)");
+    wsmatch matches;
+
+    if (regex_search(s, matches, rgx) && matches.size() == 3)
+        return tuple(matches[1].str(), matches[2].str());
 
     return nullopt;
 }
+
 bool iequals(const std::wstring_view& a, const std::wstring_view& b) {
+    if (a.size() != b.size()) return false;
     return std::equal(a.begin(), a.end(),
         b.begin(), b.end(),
-        [](char a, char b) {
+        [](wchar_t  a, wchar_t  b) {
             return tolower(a) == tolower(b);
         });
 }
@@ -147,6 +160,8 @@ void merge_env(list<wstring>& env_list, const list<wstring>& config_list) {
 
 void parse_env(list<wstring>& env_list) {
     const LPWCH  env = GetEnvironmentStrings();
+    if (!env)
+        throw std::runtime_error("GetEnvironmentStrings failed");
     LPWCH p = env;
     while (*p) {
         const size_t n = wcslen(p);
@@ -159,33 +174,99 @@ void parse_env(list<wstring>& env_list) {
     assert(rt);
 }
 
-unique_ptr<wchar_t[]> env_list_to_block(const list<wstring>& env_list) {
-    size_t total = 0;
-    for (const wstring& s : env_list) {
-        total += s.length() + 1;
+unique_ptr<wchar_t[]> env_list_to_block(const EnvMap& env) {
+    size_t total = 1; // final double-null terminator
+
+    for (const auto& kv : env)
+    {
+        const auto& name = kv.second.first;
+        const auto& value = kv.second.second;
+
+        total += name.size() + 1 + value.size() + 1;
     }
 
-    total += 1;
+    auto block = std::make_unique<wchar_t[]>(total);
+    wchar_t* p = block.get();
 
-    unique_ptr<wchar_t[]> rv = make_unique<wchar_t[]>(total);
+    for (const auto& kv : env)
+    {
+        const auto& name = kv.second.first;
+        const auto& value = kv.second.second;
 
-    wchar_t* p = rv.get();
-    for (const wstring& s : env_list) {
-        const size_t size = s.length();
-        s.copy(p, size);
-        p += size;
-        *p = L'\0';
-        p++;
+        std::wstring line = name + L"=" + value;
+
+        std::copy(line.begin(), line.end(), p);
+        p += line.size();
+        *p++ = L'\0';
     }
+
     *p = L'\0';
-    return rv;
+
+    return block;
 }
 
-unique_ptr<wchar_t[]> build_env_block(const list<wstring> &replace_list)
+bool split_env_pair(const std::wstring& s,
+    std::wstring& name,
+    std::wstring& value)
+{
+    size_t pos = s.find(L'=');
+    if (pos == std::wstring::npos)
+        return false;
+
+    name = s.substr(0, pos);
+    value = s.substr(pos + 1);
+    return true;
+}
+
+
+EnvMap env_list_to_map(const std::list<std::wstring>& env_list)
+{
+    EnvMap env;
+
+    for (const auto& s : env_list)
+    {
+        std::wstring name, value;
+
+        if (!split_env_pair(s, name, value))
+            continue;
+
+        env[to_lower(name)] = std::make_pair(name, value);
+    }
+
+    return env;
+}
+
+void merge_env_map(EnvMap& env, const EnvMap& cfg)
+{
+    for (const auto& kv : cfg)
+    {
+        env[kv.first] = kv.second; // overwrite or insert
+    }
+}
+
+EnvMap config_map_from_user_map(
+    const std::map<std::wstring, std::wstring>& replacement)
+{
+    EnvMap cfg;
+
+    for (const auto& kv : replacement)
+    {
+        const auto& name = kv.first;
+        const auto& value = kv.second;
+
+        cfg[to_lower(name)] = std::make_pair(name, value);
+    }
+
+    return cfg;
+}
+
+unique_ptr<wchar_t[]> build_env_block(const map<wstring, wstring>&replacement)
 {
     list<wstring> env_list{};
     parse_env(env_list);
-    merge_env(env_list, replace_list);
-    unique_ptr<wchar_t[]> rv = env_list_to_block(env_list);
+    EnvMap env = env_list_to_map(env_list);
+    EnvMap cfg = config_map_from_user_map(replacement);
+    merge_env_map(env, cfg);
+    unique_ptr<wchar_t[]> rv = env_list_to_block(env);
     return rv;
 }
