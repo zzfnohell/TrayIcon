@@ -5,6 +5,53 @@ using namespace std;
 constexpr WCHAR ENV_DELIMITER = L'=';
 constexpr WCHAR ENV_DELIMITER_S[] = L"=";
 
+std::wstring utf8_to_wstring(const std::string& str)
+{
+    if (str.empty()) return L"";
+
+    int size_needed = MultiByteToWideChar(
+        CP_UTF8, 0,
+        str.c_str(), (int)str.size(),
+        nullptr, 0
+    );
+
+    std::wstring wstr(size_needed, 0);
+    MultiByteToWideChar(
+        CP_UTF8, 0,
+        str.c_str(), (int)str.size(),
+        wstr.data(), size_needed
+    );
+
+    return wstr;
+}
+
+std::string wstring_to_utf8(const std::wstring& wstr)
+{
+    if (wstr.empty()) return {};
+
+    int size_needed = WideCharToMultiByte(
+        CP_UTF8,                // convert to UTF-8
+        0,                      // flags
+        wstr.c_str(),           // source
+        (int)wstr.size(),       // number of wide chars
+        nullptr, 0,             // no output yet
+        nullptr, nullptr
+    );
+
+    std::string str(size_needed, 0);
+
+    WideCharToMultiByte(
+        CP_UTF8,
+        0,
+        wstr.c_str(),
+        (int)wstr.size(),
+        str.data(),
+        size_needed,
+        nullptr, nullptr
+    );
+
+    return str;
+}
 optional<tuple<wstring, wstring>> try_match(const wstring& s) {
     constexpr int match_size = 3;
     constexpr int name_match_index = 1;

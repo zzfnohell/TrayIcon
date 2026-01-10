@@ -1,8 +1,33 @@
 #include "stdafx.h"
 #include "core.h"
+#include "env.h"
+
+using namespace std;
 
 const char MetaTableName[] = "CoreMeta";
 const char ModuleName[] = "core";
+
+
+static int l_core_get_env(lua_State* L) {
+
+	void** meta = (void**)luaL_checkudata(L, 1, MetaTableName);
+	CCore* self = (CCore*)(*meta);
+	const char* n = luaL_checkstring(L, 2);   
+
+	wstring wname = utf8_to_wstring(std::string{ n });
+	auto it = self->env_map_.find(wname);
+	if (it != self->env_map_.end())
+	{
+		const std::wstring& wval = it->second;
+		std::string val = wstring_to_utf8(wval);
+		lua_pushlstring(L, val.data(), val.size());
+	}
+	else
+	{
+		lua_pushnil(L);  // not found
+	}
+	return 1;
+}
 
 static int l_core_set_env(lua_State* L) {
 
@@ -10,15 +35,16 @@ static int l_core_set_env(lua_State* L) {
 	CCore* self = (CCore*)(*meta);
 	const char* n = luaL_checkstring(L, 2);      // first argument
 	const char* v= luaL_checkstring(L, 3); // second argument
-
-	printf("n=%s, s=%s\n", n, v);
-
-	return 0; // number of return values to Lua
+	wstring wname = utf8_to_wstring(std::string{ n });
+	wstring wval = utf8_to_wstring(std::string{ v });
+	self->env_map_[wname] = wval;
+	return 0;  
 }
 
-static int l_core_run(lua_State* L)
+static int l_core_output(lua_State* L)
 {
-	printf("system stopped\n");
+	const char* n = luaL_checkstring(L, 2);
+	OutputDebugStringA(n);
 	return 0;
 }
 
@@ -48,7 +74,9 @@ static int lua_open_core(lua_State* L)
 	luaL_newmetatable(L, MetaTableName);
 
 	static const luaL_Reg methods[] = {
+		{"getenv", l_core_get_env},
 		{"setenv", l_core_set_env},
+		{"output", l_core_output},
 		 {"__gc",     l_core_gc},
 		{NULL, NULL}
 	};
