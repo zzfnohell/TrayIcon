@@ -5,6 +5,11 @@
 using namespace std;
 using namespace std::filesystem;
 
+void DebugPrint(const wstringstream &ss)
+{ 
+	const std::wstring& s = ss.str();
+	OutputDebugString(s.c_str());
+}
 
 static path get_module_file_path()
 {
@@ -56,7 +61,9 @@ void CState::RunScript() const
 	const int error = luaL_loadfile(L, (const char*)script_file.c_str()) || lua_pcall(L, 0, 0, 0);
 	if (error != 0)
 	{
-		printf("Lua Ö´ÐÐ´íÎó: %s\n", lua_tostring(L, -1));
+		wstringstream ss;
+		ss << L"Error running script: " << lua_tostring(L, -1) << endl;
+		DebugPrint(ss);
 		lua_pop(L, 1);
 	}
 }
