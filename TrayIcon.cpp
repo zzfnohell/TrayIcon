@@ -268,6 +268,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
 {
     MSG msg;
     register_class(hInstance, WndProc);
+    GlobalState = &state;
     state.Initialize();
     state.RunScript();
 

@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "core.h"
 #include "env.h"
+#include "state.h"
 
 using namespace std;
 
@@ -11,7 +12,7 @@ const char ModuleName[] = "core";
 static int l_core_get_env(lua_State* L) {
 
 	void** meta = (void**)luaL_checkudata(L, 1, MetaTableName);
-	CCore* self = (CCore*)(*meta);
+	CState* self = (CState*)(*meta);
 	const char* n = luaL_checkstring(L, 2);   
 
 	wstring wname = utf8_to_wstring(std::string{ n });
@@ -32,7 +33,7 @@ static int l_core_get_env(lua_State* L) {
 static int l_core_set_env(lua_State* L) {
 
 	void** meta = (void**)luaL_checkudata(L, 1, MetaTableName);
-	CCore* self = (CCore*)(*meta);
+	CState* self = (CState*)(*meta);
 	const char* n = luaL_checkstring(L, 2);      // first argument
 	const char* v= luaL_checkstring(L, 3); // second argument
 	wstring wname = utf8_to_wstring(std::string{ n });
@@ -54,20 +55,7 @@ static int l_core_stop(lua_State* L)
 	printf("system stopped\n");
 	return 0;
 }
-static int l_core_gc(lua_State* L)
-{
-	void** self = (void**)luaL_checkudata(L, 1, MetaTableName);
 
-	if (*self) {
-		// free or delete your resource
-		// example if it was created with new:
-		delete (CCore*)(*self);
-
-		*self = NULL; // avoid double free
-	}
-
-	return 0;
-}
 static int lua_open_core(lua_State* L)
 {
 	// 创建 metatable
@@ -77,7 +65,6 @@ static int lua_open_core(lua_State* L)
 		{"getenv", l_core_get_env},
 		{"setenv", l_core_set_env},
 		{"output", l_core_output},
-		 {"__gc",     l_core_gc},
 		{NULL, NULL}
 	};
 	luaL_setfuncs(L, methods, 0);
@@ -88,7 +75,7 @@ static int lua_open_core(lua_State* L)
 
 	// 创建 userdata（单例）
 	void** ud = (void**)lua_newuserdatauv(L, sizeof(void*), 1);
-	*ud = new CCore();
+	*ud = GlobalState;
 
 	// 绑定 metatable
 	luaL_getmetatable(L, MetaTableName);

@@ -5,6 +5,8 @@ extern "C" {
 #include <lauxlib.h>
 }
 
+#include <map>
+
 class CState
 { 
 public:
@@ -21,6 +23,10 @@ public:
     bool GetAppHide() const;
     void  RunScript() const;
 	std::list<std::wstring> GetCustomEnvList() const;
+
+    std::map<std::wstring, std::wstring> env_map_;
 private:
     lua_State* L{ nullptr }; 
 };
+
+extern CState* GlobalState;

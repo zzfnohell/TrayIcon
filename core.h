@@ -7,8 +7,4 @@ extern "C" {
 
 #include <map>
 
-class CCore {
-public:
-	std::map<std::wstring, std::wstring> env_map_;
-};
 void core_load_libs(lua_State* L);
