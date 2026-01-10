@@ -1,9 +1,12 @@
 #include "stdafx.h"
 #include "core.h"
- 
-static int l_system_set_env(lua_State* L) {
 
-	void** meta = (void**)luaL_checkudata(L, 1, "SystemMeta");
+const char MetaTableName[] = "CoreMeta";
+const char ModuleName[] = "core";
+
+static int l_core_set_env(lua_State* L) {
+
+	void** meta = (void**)luaL_checkudata(L, 1, MetaTableName);
 	CCore* self = (CCore*)(*meta);
 	const char* n = luaL_checkstring(L, 2);      // first argument
 	const char* v= luaL_checkstring(L, 3); // second argument
@@ -13,21 +16,21 @@ static int l_system_set_env(lua_State* L) {
 	return 0; // number of return values to Lua
 }
 
-static int l_system_run(lua_State* L)
+static int l_core_run(lua_State* L)
 {
 	printf("system stopped\n");
 	return 0;
 }
 
 // system.stop()
-static int l_system_stop(lua_State* L)
+static int l_core_stop(lua_State* L)
 {
 	printf("system stopped\n");
 	return 0;
 }
-static int l_system_gc(lua_State* L)
+static int l_core_gc(lua_State* L)
 {
-	void** self = (void**)luaL_checkudata(L, 1, "SystemMeta");
+	void** self = (void**)luaL_checkudata(L, 1, MetaTableName);
 
 	if (*self) {
 		// free or delete your resource
@@ -39,16 +42,14 @@ static int l_system_gc(lua_State* L)
 
 	return 0;
 }
-static int luaopen_system(lua_State* L)
+static int lua_open_core(lua_State* L)
 {
 	// 创建 metatable
-	luaL_newmetatable(L, "SystemMeta");
+	luaL_newmetatable(L, MetaTableName);
 
 	static const luaL_Reg methods[] = {
-		{"run", l_system_run},
-		{"stop", l_system_stop},
-		{"setenv", l_system_set_env},
-		 {"__gc",     l_system_gc},
+		{"setenv", l_core_set_env},
+		 {"__gc",     l_core_gc},
 		{NULL, NULL}
 	};
 	luaL_setfuncs(L, methods, 0);
@@ -62,7 +63,7 @@ static int luaopen_system(lua_State* L)
 	*ud = new CCore();
 
 	// 绑定 metatable
-	luaL_getmetatable(L, "SystemMeta");
+	luaL_getmetatable(L, MetaTableName);
 	lua_setmetatable(L, -2);
 
 	// 返回 userdata 作为 module
@@ -71,5 +72,5 @@ static int luaopen_system(lua_State* L)
 
   void core_load_libs(lua_State* L)
 {
-	luaL_requiref(L, "core", luaopen_system, 1);
+	luaL_requiref(L, ModuleName, lua_open_core, 1);
 }
