@@ -7,9 +7,6 @@ using namespace std;
 using EnvEntry = std::pair<std::wstring, std::wstring>;
 using EnvMap = std::map<std::wstring, EnvEntry>;
 
-constexpr WCHAR ENV_DELIMITER = L'=';
-constexpr WCHAR ENV_DELIMITER_S[] = L"=";
-
 std::wstring to_lower(std::wstring s) {
     std::transform(s.begin(), s.end(), s.begin(), [](wchar_t c) { return std::tolower(c); });
     return s;
@@ -88,13 +85,11 @@ std::string wstring_to_utf8(const std::wstring& wstr) {
     return str;
 }
 optional<tuple<wstring, wstring>> try_match(const wstring& s) {
-    static const wregex rgx(L"([^=]+)=(.*)");
-    wsmatch matches;
+    auto pos = s.find(L'=');
+    if (pos == std::wstring::npos)
+        return std::nullopt;
 
-    if (regex_search(s, matches, rgx) && matches.size() == 3)
-        return tuple(matches[1].str(), matches[2].str());
-
-    return nullopt;
+    return std::make_tuple(s.substr(0, pos), s.substr(pos + 1));
 }
 
 bool iequals(const std::wstring_view& a, const std::wstring_view& b) {
