@@ -4,7 +4,7 @@ IndentWidth: 4
 ColumnLimit: 120
 AlignConsecutiveMacros: true
 IncludeBlocks: Preserve
-SortIncludes: true
+SortIncludes: false
 IncludeCategories:
     - Regex: '^<.*\.h>'
       Priority: 1
