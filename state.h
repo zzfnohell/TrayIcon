@@ -33,6 +33,8 @@ public:
 	void  RunScript() const; 
 
 	std::map<std::wstring, std::wstring> env_map_;
+
+	HWND kDlg { nullptr };
 private:
 	lua_State* L{ nullptr };
 
@@ -45,4 +47,4 @@ private:
 
 };
 
-extern CState* GlobalState;
+extern CState* kStatePtr;

@@ -130,7 +130,7 @@ static int lua_open_core(lua_State* L)
 
 	// 创建 userdata（单例）
 	void** ud = (void**)lua_newuserdatauv(L, sizeof(void*), 1);
-	*ud = GlobalState;
+	*ud = kStatePtr;
 
 	// 绑定 metatable
 	luaL_getmetatable(L, MetaTableName);

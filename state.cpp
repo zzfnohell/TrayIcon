@@ -5,7 +5,7 @@
 using namespace std;
 using namespace std::filesystem;
 
-CState* GlobalState;
+CState* kStatePtr;
 void DebugPrint(const wstringstream& ss)
 {
 	const std::wstring& s = ss.str();
