@@ -1,15 +1,37 @@
 ---
 BasedOnStyle: LLVM
-IndentWidth: 4
 ColumnLimit: 120
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+
 AlignConsecutiveMacros: true
 IncludeBlocks: Preserve
+
 SortIncludes: false
 IncludeCategories:
     - Regex: '^<.*\.h>'
       Priority: 1
     - Regex: '^"stdafx\.h"$'
       Priority: 0
+
+BreakBeforeBraces: Allman
+BraceWrapping:
+    AfterClass: true
+    AfterControlStatement: true
+    AfterEnum: true
+    AfterFunction: true
+    AfterNamespace: true
+    AfterStruct: true
+    AfterUnion: true
+    BeforeElse: true
+    IndentBraces: false
+
+InsertBraces: true
+AllowShortIfStatementsOnASingleLine: false
+AllowShortLoopsOnASingleLine: false
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: None # 不允许单行函数
 ---
 Language: Cpp
 # Force pointers to the type for C++.

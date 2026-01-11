@@ -1,5 +1,6 @@
 #pragma once
-extern "C" {
+extern "C"
+{
 #include <lauxlib.h>
 #include <lua.h>
 #include <lualib.h>
@@ -7,4 +8,4 @@ extern "C" {
 
 #include <map>
 
-void core_load_libs(lua_State* L);
+void core_load_libs(lua_State* L) noexcept;

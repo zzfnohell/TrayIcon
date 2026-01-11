@@ -1,5 +1,6 @@
 #pragma once
-extern "C" {
+extern "C"
+{
 #include <lauxlib.h>
 #include <lua.h>
 #include <lualib.h>
@@ -7,31 +8,32 @@ extern "C" {
 
 #include <map>
 
-class CState {
+class CState
+{
   public:
-    CState();
-    ~CState();
+    CState() noexcept;
+    ~CState() noexcept;
 
-    void Initialize();
+    void Initialize() noexcept;
 
-    const std::wstring& GetAppArgs() const;
-    const std::filesystem::path& GetOnIconPath() const;
-    const std::filesystem::path& GetOffIconPath() const;
-    const std::filesystem::path& GetAppPath() const;
-    const std::filesystem::path& GetAppWorkDir() const;
+    const std::wstring& GetAppArgs() const noexcept;
+    const std::filesystem::path& GetOnIconPath() const noexcept;
+    const std::filesystem::path& GetOffIconPath() const noexcept;
+    const std::filesystem::path& GetAppPath() const noexcept;
+    const std::filesystem::path& GetAppWorkDir() const noexcept;
 
-    void SetAppArgs(const std::wstring&);
-    void SetOnIconPath(const std::filesystem::path& val);
-    void SetOffIconPath(const std::filesystem::path& val);
-    void SetAppPath(const std::filesystem::path& val);
-    void SetAppWorkDir(const std::filesystem::path& val);
+    void SetAppArgs(const std::wstring&) noexcept;
+    void SetOnIconPath(const std::filesystem::path& val) noexcept;
+    void SetOffIconPath(const std::filesystem::path& val) noexcept;
+    void SetAppPath(const std::filesystem::path& val) noexcept;
+    void SetAppWorkDir(const std::filesystem::path& val) noexcept;
 
-    bool GetAppHide() const;
-    void SetAppHide(bool val);
+    bool GetAppHide() const noexcept;
+    void SetAppHide(bool val) noexcept;
 
-    bool RunScript() const;
+    bool RunScript() const noexcept;
 
-    void Reset();
+    void Reset() noexcept;
 
     std::map<std::wstring, std::wstring> env_map_;
 

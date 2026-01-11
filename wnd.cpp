@@ -3,7 +3,8 @@
 
 const wchar_t kClassName[] = L"TrayIconWindowClass";
 
-void register_class(HINSTANCE hInstance, WNDPROC WndProc) {
+void register_class(HINSTANCE hInstance, WNDPROC WndProc) noexcept
+{
     WNDCLASSEX wcex;
     wcex.cbSize = sizeof(WNDCLASSEX);
     wcex.style = CS_HREDRAW | CS_VREDRAW;
@@ -21,12 +22,14 @@ void register_class(HINSTANCE hInstance, WNDPROC WndProc) {
     assert(rc);
 }
 
-void unregister_class(HINSTANCE hInstance) {
+void unregister_class(HINSTANCE hInstance) noexcept
+{
     BOOL rc = UnregisterClass(kClassName, hInstance);
     assert(rc);
 }
 
-HWND create_window(HINSTANCE hInstance, int nCmdShow) {
+HWND create_window(HINSTANCE hInstance, int nCmdShow) noexcept
+{
     constexpr int kWidth = 400;
     constexpr int kHeight = 200;
     int w = GetSystemMetrics(SM_CXSCREEN);
@@ -37,7 +40,8 @@ HWND create_window(HINSTANCE hInstance, int nCmdShow) {
     HWND wnd = CreateWindow(kClassName, L"TrayIcon", WS_OVERLAPPEDWINDOW, x + (w - 400) / 2, y + (h - 200) / 2, 400,
                             200, NULL, NULL, hInstance, NULL);
 
-    if (wnd) {
+    if (wnd)
+    {
         ShowWindow(wnd, nCmdShow);
         UpdateWindow(wnd);
     }

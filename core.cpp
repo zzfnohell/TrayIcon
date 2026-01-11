@@ -9,29 +9,35 @@ using namespace std::filesystem;
 const char MetaTableName[] = "CoreMeta";
 const char ModuleName[] = "core";
 
-inline static CState* get_state(lua_State* L) {
-    void** meta = (void**)luaL_checkudata(L, 1, MetaTableName);
-    CState* self = (CState*)(*meta);
+inline static CState* get_state(lua_State* L) noexcept
+{
+    void** meta = static_cast<void**>(luaL_checkudata(L, 1, MetaTableName));
+    CState* self = static_cast<CState*>(*meta);
     return self;
 }
 
-static int l_core_get_env(lua_State* L) {
+static int l_core_get_env(lua_State* L) noexcept
+{
     CState* state = get_state(L);
     const char* n = luaL_checkstring(L, 2);
 
     wstring wname = ansi_to_wstring(std::string{n});
-    auto it = state->env_map_.find(wname);
-    if (it != state->env_map_.end()) {
+    const auto it = state->env_map_.find(wname);
+    if (it != state->env_map_.end())
+    {
         const std::wstring& wval = it->second;
         std::string val = wstring_to_ansi(wval);
         lua_pushlstring(L, val.data(), val.size());
-    } else {
+    }
+    else
+    {
         lua_pushnil(L); // not found
     }
     return 1;
 }
 
-static int l_core_set_env(lua_State* L) {
+static int l_core_set_env(lua_State* L) noexcept
+{
 
     CState* state = get_state(L);
     const char* n = luaL_checkstring(L, 2); // first argument
@@ -42,55 +48,63 @@ static int l_core_set_env(lua_State* L) {
     return 0;
 }
 
-static int l_core_output(lua_State* L) {
+static int l_core_output(lua_State* L) noexcept
+{
     const char* n = luaL_checkstring(L, 2);
     OutputDebugStringA(n);
     return 0;
 }
 
-static int l_core_set_icon_on(lua_State* L) {
+static int l_core_set_icon_on(lua_State* L) noexcept
+{
     CState* state = get_state(L);
     const char* s = luaL_checkstring(L, 2);
     state->SetOnIconPath(s);
     return 0;
 }
 
-static int l_core_set_icon_off(lua_State* L) {
+static int l_core_set_icon_off(lua_State* L) noexcept
+{
     CState* state = get_state(L);
     const char* s = luaL_checkstring(L, 2);
     state->SetOffIconPath(s);
     return 0;
 }
 
-static int l_core_set_app_path(lua_State* L) {
+static int l_core_set_app_path(lua_State* L) noexcept
+{
     CState* state = get_state(L);
     const char* s = luaL_checkstring(L, 2);
     state->SetAppPath(s);
     return 0;
 }
 
-static int l_core_set_app_args(lua_State* L) {
+static int l_core_set_app_args(lua_State* L) noexcept
+{
     CState* state = get_state(L);
     const char* s = luaL_checkstring(L, 2);
     state->SetAppArgs(ansi_to_wstring(std::string{s}));
     return 0;
 }
 
-static int l_core_set_work_dir(lua_State* L) {
+static int l_core_set_work_dir(lua_State* L) noexcept
+{
     CState* state = get_state(L);
     const char* s = luaL_checkstring(L, 2);
     state->SetAppWorkDir(s);
     return 0;
 }
 
-static int l_core_set_app_hide(lua_State* L) {
+static int l_core_set_app_hide(lua_State* L) noexcept
+{
     CState* state = get_state(L);
     luaL_checktype(L, 2, LUA_TBOOLEAN);
     int val = lua_toboolean(L, 2);
     state->SetAppHide(val != 0);
     return 0;
 }
-static int lua_open_core(lua_State* L) {
+static int lua_open_core(lua_State* L) noexcept
+{
     // 创建 metatable
     luaL_newmetatable(L, MetaTableName);
 
@@ -122,4 +136,4 @@ static int lua_open_core(lua_State* L) {
     return 1;
 }
 
-void core_load_libs(lua_State* L) { luaL_requiref(L, ModuleName, lua_open_core, 1); }
+void core_load_libs(lua_State* L) noexcept { luaL_requiref(L, ModuleName, lua_open_core, 1); }
