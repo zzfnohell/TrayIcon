@@ -18,6 +18,71 @@ std::wstring to_lower(std::wstring s)
     return s;
 }
 
+std::string wstring_to_ansi(const std::wstring& wstr)
+{
+    if (wstr.empty()) return "";
+
+    // Step 1: get required size
+    int size_needed = WideCharToMultiByte(
+        CP_ACP,                     // system ANSI code page
+        WC_NO_BEST_FIT_CHARS,       // avoid best-fit mapping
+        wstr.c_str(),
+        static_cast<int>(wstr.size()),
+        nullptr,
+        0,
+        nullptr,                    // default char if unmappable
+        nullptr                     // receives "used default char" flag
+    );
+
+    if (size_needed <= 0)
+        return "";  // or throw
+
+    // Step 2: convert
+    std::string str(size_needed, 0);
+    WideCharToMultiByte(
+        CP_ACP,
+        WC_NO_BEST_FIT_CHARS,
+        wstr.c_str(),
+        static_cast<int>(wstr.size()),
+        str.data(),
+        size_needed,
+        nullptr,
+        nullptr
+    );
+
+    return str;
+}
+std::wstring ansi_to_wstring(const std::string& str)
+{
+    if (str.empty()) return L"";
+
+    // Step 1: get size needed
+    int size_needed = MultiByteToWideChar(
+        CP_ACP,                     // system ANSI code page
+        MB_ERR_INVALID_CHARS,       // fail on invalid chars
+        str.c_str(),
+        static_cast<int>(str.size()),
+        nullptr,
+        0
+    );
+
+    if (size_needed <= 0)
+        return L""; // or throw
+
+    // Step 2: convert
+    std::wstring wstr(size_needed, 0);
+    MultiByteToWideChar(
+        CP_ACP,
+        MB_ERR_INVALID_CHARS,
+        str.c_str(),
+        static_cast<int>(str.size()),
+        wstr.data(),
+        size_needed
+    );
+
+    return wstr;
+}
+
 std::wstring utf8_to_wstring(const std::string& str)
 {
     if (str.empty()) return L"";

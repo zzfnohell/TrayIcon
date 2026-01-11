@@ -21,8 +21,7 @@ public:
 	const std::filesystem::path& GetAppPath() const;
 	const	std::filesystem::path& GetAppWorkDir() const;
 	bool GetTrayHide() const;
-	void  RunScript() const;
-	std::list<std::wstring> GetCustomEnvList() const;
+	void  RunScript() const; 
 
 	bool tray_hide_{ true };
 	std::wstring app_args_;

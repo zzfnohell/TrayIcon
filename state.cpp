@@ -5,9 +5,9 @@
 using namespace std;
 using namespace std::filesystem;
 
-  CState* GlobalState;
-void DebugPrint(const wstringstream &ss)
-{ 
+CState* GlobalState;
+void DebugPrint(const wstringstream& ss)
+{
 	const std::wstring& s = ss.str();
 	OutputDebugString(s.c_str());
 }
@@ -94,7 +94,7 @@ const path& CState::GetOnIconPath() const
 
 const path& CState::GetOffIconPath() const
 {
-	return off_icon_path_
+	return off_icon_path_;
 }
 
 const path& CState::GetAppWorkDir() const
@@ -109,10 +109,4 @@ bool  CState::GetTrayHide() const {
 const wstring& CState::GetAppArgs() const
 {
 	return app_args_;
-}
-
-std::list<std::wstring> CState::GetCustomEnvList() const {
-	std::list<std::wstring> rv;
-	return rv;
- 
 }

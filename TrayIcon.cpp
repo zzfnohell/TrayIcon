@@ -177,17 +177,16 @@ void StartProcess()
     }
 
     si.cb = sizeof(si);
-    if (state.GetAppHide())
+    if (state.GetTrayHide())
     {
         si.dwFlags = STARTF_USESHOWWINDOW;
         si.wShowWindow = SW_HIDE;
     }
 
-    const path startup_dir = state.GetAppWorkDir();
-    const list<wstring> custom_env_list = state.GetCustomEnvList();
+    const path startup_dir = state.GetAppWorkDir(); 
     unique_ptr<wchar_t[]> cmd_line = BuildCmdLine();
 
-    unique_ptr<wchar_t[]> env_block = build_env_block(custom_env_list);
+    unique_ptr<wchar_t[]> env_block = build_env_block(state.env_map_);
     rc = CreateProcess(
         nullptr, // No module name (use command line)
         cmd_line.get(), // Command line

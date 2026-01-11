@@ -16,12 +16,12 @@ static int l_core_get_env(lua_State* L) {
 	CState* self = (CState*)(*meta);
 	const char* n = luaL_checkstring(L, 2);
 
-	wstring wname = utf8_to_wstring(std::string{ n });
+	wstring wname = ansi_to_wstring(std::string{ n });
 	auto it = self->env_map_.find(wname);
 	if (it != self->env_map_.end())
 	{
 		const std::wstring& wval = it->second;
-		std::string val = wstring_to_utf8(wval);
+		std::string val = wstring_to_ansi(wval);
 		lua_pushlstring(L, val.data(), val.size());
 	}
 	else
@@ -37,8 +37,8 @@ static int l_core_set_env(lua_State* L) {
 	CState* self = (CState*)(*meta);
 	const char* n = luaL_checkstring(L, 2);      // first argument
 	const char* v = luaL_checkstring(L, 3); // second argument
-	wstring wname = utf8_to_wstring(std::string{ n });
-	wstring wval = utf8_to_wstring(std::string{ v });
+	wstring wname = ansi_to_wstring(std::string{ n });
+	wstring wval = ansi_to_wstring(std::string{ v });
 	self->env_map_[wname] = wval;
 	return 0;
 }
@@ -83,7 +83,7 @@ static int l_core_set_app_args(lua_State* L)
 	void** meta = (void**)luaL_checkudata(L, 1, MetaTableName);
 	CState* state = (CState*)(*meta);
 	const char* s = luaL_checkstring(L, 2);
-	state->app_args_ = utf8_to_wstring(std::string{ s });
+	state->app_args_ = ansi_to_wstring(std::string{ s });
 	return 0;
 }
 
@@ -100,7 +100,8 @@ static int l_core_set_tray_hide(lua_State* L)
 {
 	void** meta = (void**)luaL_checkudata(L, 1, MetaTableName);
 	CState* state = (CState*)(*meta);
-	int  val = luaL_checkinteger(L, 2);
+	luaL_checktype(L, 2, LUA_TBOOLEAN);
+	int val = lua_toboolean(L, 2);
 	state->tray_hide_ = val != 0;
 	return 0;
 }
