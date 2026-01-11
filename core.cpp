@@ -136,4 +136,7 @@ static int lua_open_core(lua_State* L) noexcept
     return 1;
 }
 
-void core_load_libs(lua_State* L) noexcept { luaL_requiref(L, ModuleName, lua_open_core, 1); }
+void core_load_libs(lua_State* L) noexcept
+{
+    luaL_requiref(L, ModuleName, lua_open_core, 1);
+}
