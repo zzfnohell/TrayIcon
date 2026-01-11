@@ -25,7 +25,7 @@ public:
 	std::list<std::wstring> GetCustomEnvList() const;
 
 	bool tray_hide_{ true };
-	std::wstring args_;
+	std::wstring app_args_;
 	std::filesystem::path app_path_;
 	std::filesystem::path work_dir_;
 	std::filesystem::path on_icon_path_;

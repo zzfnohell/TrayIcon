@@ -4,6 +4,7 @@
 #include "state.h"
 
 using namespace std;
+using namespace std::filesystem;
 
 const char MetaTableName[] = "CoreMeta";
 const char ModuleName[] = "core";
@@ -13,7 +14,7 @@ static int l_core_get_env(lua_State* L) {
 
 	void** meta = (void**)luaL_checkudata(L, 1, MetaTableName);
 	CState* self = (CState*)(*meta);
-	const char* n = luaL_checkstring(L, 2);   
+	const char* n = luaL_checkstring(L, 2);
 
 	wstring wname = utf8_to_wstring(std::string{ n });
 	auto it = self->env_map_.find(wname);
@@ -35,11 +36,11 @@ static int l_core_set_env(lua_State* L) {
 	void** meta = (void**)luaL_checkudata(L, 1, MetaTableName);
 	CState* self = (CState*)(*meta);
 	const char* n = luaL_checkstring(L, 2);      // first argument
-	const char* v= luaL_checkstring(L, 3); // second argument
+	const char* v = luaL_checkstring(L, 3); // second argument
 	wstring wname = utf8_to_wstring(std::string{ n });
 	wstring wval = utf8_to_wstring(std::string{ v });
 	self->env_map_[wname] = wval;
-	return 0;  
+	return 0;
 }
 
 static int l_core_output(lua_State* L)
@@ -49,13 +50,60 @@ static int l_core_output(lua_State* L)
 	return 0;
 }
 
-// system.stop()
-static int l_core_stop(lua_State* L)
+
+static int l_core_set_icon_on(lua_State* L)
 {
-	printf("system stopped\n");
+	void** meta = (void**)luaL_checkudata(L, 1, MetaTableName);
+	CState* state = (CState*)(*meta);
+	const char* s = luaL_checkstring(L, 2);
+	state->on_icon_path_ = path{ s };
 	return 0;
 }
 
+static int l_core_set_icon_off(lua_State* L)
+{
+	void** meta = (void**)luaL_checkudata(L, 1, MetaTableName);
+	CState* state = (CState*)(*meta);
+	const char* s = luaL_checkstring(L, 2);
+	state->on_icon_path_ = path{ s };
+	return 0;
+}
+
+static int l_core_set_app_path(lua_State* L)
+{
+	void** meta = (void**)luaL_checkudata(L, 1, MetaTableName);
+	CState* state = (CState*)(*meta);
+	const char* s = luaL_checkstring(L, 2);
+	state->app_path_ = path{ s };
+	return 0;
+}
+
+static int l_core_set_app_args(lua_State* L)
+{
+	void** meta = (void**)luaL_checkudata(L, 1, MetaTableName);
+	CState* state = (CState*)(*meta);
+	const char* s = luaL_checkstring(L, 2);
+	state->app_args_ = utf8_to_wstring(std::string{ s });
+	return 0;
+}
+
+static int l_core_set_work_dir(lua_State* L)
+{
+	void** meta = (void**)luaL_checkudata(L, 1, MetaTableName);
+	CState* state = (CState*)(*meta);
+	const char* s = luaL_checkstring(L, 2);
+	state->work_dir_ = path{ s };
+	return 0;
+}
+
+static int l_core_set_tray_hide(lua_State* L)
+{
+	void** meta = (void**)luaL_checkudata(L, 1, MetaTableName);
+	CState* state = (CState*)(*meta);
+	int  val = luaL_checkinteger(L, 2);
+	state->tray_hide_ = val != 0;
+	return 0;
+}
 static int lua_open_core(lua_State* L)
 {
 	// 创建 metatable
@@ -64,12 +112,12 @@ static int lua_open_core(lua_State* L)
 	static const luaL_Reg methods[] = {
 		{"getenv", l_core_get_env},
 		{"setenv", l_core_set_env},
-		{"seticonon", l_core_set_env},
-		{"seticonoff", l_core_set_env},
-		{"setapppath", l_core_set_env},
-		{"setappargs", l_core_set_env},
-		{"setappworkdir", l_core_set_env},
-		{"settrayhide", l_core_set_env},
+		{"seticonon", l_core_set_icon_on},
+		{"seticonoff", l_core_set_icon_off},
+		{"setapppath", l_core_set_app_path},
+		{"setappargs", l_core_set_app_args},
+		{"setappworkdir", l_core_set_work_dir},
+		{"settrayhide", l_core_set_tray_hide},
 		{"output", l_core_output},
 		{NULL, NULL}
 	};
@@ -91,7 +139,7 @@ static int lua_open_core(lua_State* L)
 	return 1;
 }
 
-  void core_load_libs(lua_State* L)
+void core_load_libs(lua_State* L)
 {
 	luaL_requiref(L, ModuleName, lua_open_core, 1);
 }

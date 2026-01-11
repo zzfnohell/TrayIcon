@@ -84,22 +84,22 @@ CState::~CState()
 
 const path& CState::GetAppPath() const
 {
-	return "";
+	return app_path_;
 }
 
 const path& CState::GetOnIconPath() const
 {
-	return "";
+	return on_icon_path_;
 }
 
 const path& CState::GetOffIconPath() const
 {
-	return "";
+	return off_icon_path_
 }
 
 const path& CState::GetAppWorkDir() const
 {
-	return "";
+	return work_dir_;
 }
 
 bool  CState::GetTrayHide() const {
@@ -108,7 +108,7 @@ bool  CState::GetTrayHide() const {
 
 const wstring& CState::GetAppArgs() const
 {
-	return args_;
+	return app_args_;
 }
 
 std::list<std::wstring> CState::GetCustomEnvList() const {
