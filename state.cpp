@@ -40,7 +40,7 @@ static path canonicalize(const path& p)
 {
 	if (p.is_relative())
 	{
-		const path root = get_module_file_path();
+		const path root = get_module_directory();
 		path rv = absolute(root / p);
 		return rv;
 	}
@@ -88,8 +88,8 @@ const path& CState::GetAppPath() const
 }
 
 void  CState::SetAppPath(const std::filesystem::path& val)
-{
-	app_path_ = val;
+{ 
+	app_path_ = canonicalize(val);
 }
 
 const path& CState::GetOnIconPath() const
@@ -98,7 +98,7 @@ const path& CState::GetOnIconPath() const
 }
 
 void  CState::SetOnIconPath(const std::filesystem::path& val) {
-	on_icon_path_ = val;
+	on_icon_path_ = canonicalize(val);
 }
 
 const path& CState::GetOffIconPath() const
@@ -108,7 +108,7 @@ const path& CState::GetOffIconPath() const
 
 void  CState::SetOffIconPath(const std::filesystem::path& val)
 {
-	off_icon_path_ = val;
+	off_icon_path_ = canonicalize(val);
 }
 
 const path& CState::GetAppWorkDir() const
@@ -118,7 +118,7 @@ const path& CState::GetAppWorkDir() const
 
 void  CState::SetAppWorkDir(const std::filesystem::path& val)
 {
-	work_dir_ = val;
+	work_dir_ = canonicalize(val);
 }
 
 bool  CState::GetTrayHide() const {
