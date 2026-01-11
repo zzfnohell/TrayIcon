@@ -156,10 +156,6 @@ void StartProcess()
 	LPWSTR msg;
 	BOOL rc;
 
-	if (!kState.RunScript()) {
-		return;
-	}
-
 	ZeroMemory(&si, sizeof(si));
 	ZeroMemory(&pi, sizeof(pi));
 
@@ -292,7 +288,6 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	gInstance = hInstance;
 
 	kState.Initialize();
-
 	kState.kDlg = create_window(hInstance, nCmdShow);
 	assert(kState.kDlg);
 	if (!kState.kDlg)
@@ -305,22 +300,25 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
 	InitializeNotificationData();
 
-	const path image_path = kState.GetOffIconPath();
+	if (kState.RunScript()) {
+		const path image_path = kState.GetOffIconPath();
+		constexpr UINT flags = LR_LOADFROMFILE;
+		const auto icon = static_cast<HICON>(LoadImage(
+			nullptr,
+			image_path.c_str(),
+			IMAGE_ICON,
+			GetSystemMetrics(SM_CXSMICON),
+			GetSystemMetrics(SM_CYSMICON),
+			flags));
+		kData.hIcon = icon;
+		Shell_NotifyIcon(NIM_ADD, &kData);
+		DestroyIcon(icon);
+		kData.hIcon = nullptr;
 
-	constexpr UINT flags = LR_LOADFROMFILE;
-	const auto icon = static_cast<HICON>(LoadImage(
-		nullptr,
-		image_path.c_str(),
-		IMAGE_ICON,
-		GetSystemMetrics(SM_CXSMICON),
-		GetSystemMetrics(SM_CYSMICON),
-		flags));
-	kData.hIcon = icon;
-	Shell_NotifyIcon(NIM_ADD, &kData);
-	DestroyIcon(icon);
-	kData.hIcon = nullptr;
+		StartProcess();
+	}
 
-	StartProcess();
+	
 	return TRUE;
 }
 

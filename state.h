@@ -32,6 +32,8 @@ public:
 
 	bool RunScript() const;
 
+	void Reset();
+
 	std::map<std::wstring, std::wstring> env_map_;
 
 	HWND kDlg { nullptr };

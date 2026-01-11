@@ -9,16 +9,23 @@ using namespace std::filesystem;
 CState* kStatePtr;
 
 LPWSTR format_state_error(const wstring& s)
-{   
+{
 	const rsize_t word_count = s.size() + 1;
 	wchar_t* p = new wchar_t[word_count];
 	wcscpy_s(p, word_count, s.c_str());
 	return p;
 }
 
-void DebugPrint(const std::wstring& s)
+inline void DebugPrint(const std::wstring& s)
 {
 	OutputDebugString(s.c_str());
+}
+
+inline void ShowError(HWND dlg, const wstring& wmsg) {
+	LPWSTR msg = format_state_error(wmsg);
+	// ReSharper disable once CppAssignedValueIsNeverUsed
+	BOOL rc = PostMessage(dlg, UWM_UPDATEINFO, NULL, reinterpret_cast<LPARAM>(msg));
+	assert(rc);
 }
 
 static path get_module_file_path()
@@ -74,16 +81,26 @@ bool CState::RunScript() const
 		wstringstream ss;
 		ss << L"Error running script: " << lua_tostring(L, -1) << endl;
 		auto wmsg = ss.str();
-		DebugPrint(wmsg);
-		LPWSTR msg = format_state_error(wmsg);
-		// ReSharper disable once CppAssignedValueIsNeverUsed
-		BOOL rc = PostMessage(kDlg, UWM_UPDATEINFO, NULL, reinterpret_cast<LPARAM>(msg));
-		assert(rc);
 		lua_pop(L, 1);
+
+		DebugPrint(wmsg);
+
+		ShowError(kDlg, wmsg);
 		return false;
 	}
 
 	return true;
+}
+
+
+void CState::Reset() {
+	tray_hide_ = true;
+	app_args_.clear();
+	app_path_.clear();
+	work_dir_.clear();
+	on_icon_path_.clear();
+	off_icon_path_.clear();
+	env_map_.clear();
 }
 
 CState::CState()
@@ -105,7 +122,7 @@ const path& CState::GetAppPath() const
 }
 
 void  CState::SetAppPath(const std::filesystem::path& val)
-{ 
+{
 	app_path_ = canonicalize(val);
 }
 
