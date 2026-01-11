@@ -77,6 +77,9 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+    <EnableClangTidyCodeAnalysis>true</EnableClangTidyCodeAnalysis>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <PropertyGroup Label="Vcpkg">
     <VcpkgEnableManifest>true</VcpkgEnableManifest>
@@ -201,12 +204,16 @@
   <ItemGroup>
     <ClInclude Include="core.h" />
     <ClInclude Include="env.h" />
+    <ClInclude Include="resource.h" />
     <ClInclude Include="state.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="wnd.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="TrayIcon.sample.lua" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Resource.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 </Project>
