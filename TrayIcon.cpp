@@ -73,6 +73,17 @@ LPWSTR format_process_id(const wstring& msg, DWORD process_id)
 	return p;
 }
 
+inline static void show_last_error(const wstring& name) {
+	LPWSTR msg = format_last_error(name);
+	BOOL rc = PostMessage(kState.kDlg, UWM_UPDATEINFO, NULL, reinterpret_cast<LPARAM>(msg));
+	assert(rc);
+}
+
+inline static void show_message(const wstring& name, DWORD process_id) {
+	LPWSTR msg = format_last_error(name);
+	BOOL rc = PostMessage(kState.kDlg, UWM_UPDATEINFO, NULL, reinterpret_cast<LPARAM>(msg));
+	assert(rc);
+}
 
 VOID CALLBACK WaitOrTimerCallback(_In_ PVOID lpParameter, _In_ BOOLEAN TimerOrWaitFired)
 {
@@ -144,11 +155,11 @@ void StartProcess()
 	PROCESS_INFORMATION pi;
 	LPWSTR msg;
 	BOOL rc;
-	
+
 	if (!kState.RunScript()) {
 		return;
 	}
-	
+
 	ZeroMemory(&si, sizeof(si));
 	ZeroMemory(&pi, sizeof(pi));
 
@@ -166,10 +177,7 @@ void StartProcess()
 		rc = CloseHandle(hJobObject);
 		assert(rc);
 
-		msg = format_last_error(L"Create Job failed.");
-		// ReSharper disable once CppAssignedValueIsNeverUsed
-		rc = PostMessage(kState.kDlg, UWM_UPDATEINFO, NULL, reinterpret_cast<LPARAM>(msg));
-		assert(rc);
+		show_last_error(L"Create Job failed.");
 		return;
 	}
 
@@ -203,10 +211,7 @@ void StartProcess()
 		rc = CloseHandle(hJobObject);
 		assert(rc);
 
-		msg = format_last_error(L"CreateProcess failed");
-		// ReSharper disable once CppAssignedValueIsNeverUsed
-		rc = PostMessage(kState.kDlg, UWM_UPDATEINFO, NULL, reinterpret_cast<LPARAM>(msg));
-		assert(rc);
+		show_last_error(L"CreateProcess failed");
 		return;
 	}
 
@@ -230,10 +235,7 @@ void StartProcess()
 	rc = PostMessage(kState.kDlg, UWM_CHILDCREATE, NULL, reinterpret_cast<LPARAM>(hJobObject));
 	assert(rc);
 
-	msg = format_process_id(L"Process Running", pi.dwProcessId);
-	// ReSharper disable once CppAssignedValueIsNeverUsed
-	rc = PostMessage(kState.kDlg, UWM_UPDATEINFO, NULL, reinterpret_cast<LPARAM>(msg));
-	assert(rc);
+	show_message(L"Process Running", pi.dwProcessId);
 
 	// ReSharper disable once CppAssignedValueIsNeverUsed
 	rc = RegisterWaitForSingleObject(&hNewWaitHandle, pi.hProcess, WaitOrTimerCallback, hJobObject, INFINITE,
