@@ -9,16 +9,19 @@ using namespace std::filesystem;
 const char MetaTableName[] = "CoreMeta";
 const char ModuleName[] = "core";
 
-
-static int l_core_get_env(lua_State* L) {
-
+inline static CState* get_state(lua_State* L) {
 	void** meta = (void**)luaL_checkudata(L, 1, MetaTableName);
 	CState* self = (CState*)(*meta);
+	return self;
+}
+
+static int l_core_get_env(lua_State* L) {
+	CState* state = get_state(L);
 	const char* n = luaL_checkstring(L, 2);
 
 	wstring wname = ansi_to_wstring(std::string{ n });
-	auto it = self->env_map_.find(wname);
-	if (it != self->env_map_.end())
+	auto it = state->env_map_.find(wname);
+	if (it != state->env_map_.end())
 	{
 		const std::wstring& wval = it->second;
 		std::string val = wstring_to_ansi(wval);
@@ -33,13 +36,12 @@ static int l_core_get_env(lua_State* L) {
 
 static int l_core_set_env(lua_State* L) {
 
-	void** meta = (void**)luaL_checkudata(L, 1, MetaTableName);
-	CState* self = (CState*)(*meta);
+	CState* state = get_state(L);
 	const char* n = luaL_checkstring(L, 2);      // first argument
 	const char* v = luaL_checkstring(L, 3); // second argument
 	wstring wname = ansi_to_wstring(std::string{ n });
 	wstring wval = ansi_to_wstring(std::string{ v });
-	self->env_map_[wname] = wval;
+	state->env_map_[wname] = wval;
 	return 0;
 }
 
@@ -53,8 +55,7 @@ static int l_core_output(lua_State* L)
 
 static int l_core_set_icon_on(lua_State* L)
 {
-	void** meta = (void**)luaL_checkudata(L, 1, MetaTableName);
-	CState* state = (CState*)(*meta);
+	CState* state = get_state(L);
 	const char* s = luaL_checkstring(L, 2);
 	state->SetOnIconPath(s);
 	return 0;
@@ -62,8 +63,7 @@ static int l_core_set_icon_on(lua_State* L)
 
 static int l_core_set_icon_off(lua_State* L)
 {
-	void** meta = (void**)luaL_checkudata(L, 1, MetaTableName);
-	CState* state = (CState*)(*meta);
+	CState* state = get_state(L);
 	const char* s = luaL_checkstring(L, 2);
 	state->SetOffIconPath(s);
 	return 0;
@@ -71,8 +71,7 @@ static int l_core_set_icon_off(lua_State* L)
 
 static int l_core_set_app_path(lua_State* L)
 {
-	void** meta = (void**)luaL_checkudata(L, 1, MetaTableName);
-	CState* state = (CState*)(*meta);
+	CState* state = get_state(L);
 	const char* s = luaL_checkstring(L, 2);
 	state->SetAppPath(s);
 	return 0;
@@ -80,8 +79,7 @@ static int l_core_set_app_path(lua_State* L)
 
 static int l_core_set_app_args(lua_State* L)
 {
-	void** meta = (void**)luaL_checkudata(L, 1, MetaTableName);
-	CState* state = (CState*)(*meta);
+	CState* state = get_state(L);
 	const char* s = luaL_checkstring(L, 2);
 	state->SetAppArgs(ansi_to_wstring(std::string{ s }));
 	return 0;
@@ -89,20 +87,18 @@ static int l_core_set_app_args(lua_State* L)
 
 static int l_core_set_work_dir(lua_State* L)
 {
-	void** meta = (void**)luaL_checkudata(L, 1, MetaTableName);
-	CState* state = (CState*)(*meta);
+	CState* state = get_state(L);
 	const char* s = luaL_checkstring(L, 2);
 	state->SetAppWorkDir(s);
 	return 0;
 }
 
-static int l_core_set_tray_hide(lua_State* L)
+static int l_core_set_app_hide(lua_State* L)
 {
-	void** meta = (void**)luaL_checkudata(L, 1, MetaTableName);
-	CState* state = (CState*)(*meta);
+	CState* state = get_state(L);
 	luaL_checktype(L, 2, LUA_TBOOLEAN);
 	int val = lua_toboolean(L, 2);
-	state->SetTrayHide(val != 0);
+	state->SetAppHide(val != 0);
 	return 0;
 }
 static int lua_open_core(lua_State* L)
@@ -118,7 +114,7 @@ static int lua_open_core(lua_State* L)
 		{"setapppath", l_core_set_app_path},
 		{"setappargs", l_core_set_app_args},
 		{"setappworkdir", l_core_set_work_dir},
-		{"settrayhide", l_core_set_tray_hide},
+		{"setapphide", l_core_set_app_hide},
 		{"output", l_core_output},
 		{NULL, NULL}
 	};

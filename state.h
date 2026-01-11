@@ -27,8 +27,8 @@ public:
 	void SetAppPath(const std::filesystem::path& val);
 	void SetAppWorkDir(const std::filesystem::path& val);
 
-	bool GetTrayHide() const;
-	void SetTrayHide(bool val);
+	bool GetAppHide() const;
+	void SetAppHide(bool val);
 
 	bool RunScript() const;
 
@@ -40,7 +40,7 @@ public:
 private:
 	lua_State* L{ nullptr };
 
-	bool tray_hide_{ true };
+	bool app_hide_{ true };
 	std::wstring app_args_;
 	std::filesystem::path app_path_;
 	std::filesystem::path work_dir_;

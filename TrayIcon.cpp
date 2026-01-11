@@ -178,7 +178,7 @@ void StartProcess()
 	}
 
 	si.cb = sizeof(si);
-	if (kState.GetTrayHide())
+	if (kState.GetAppHide())
 	{
 		si.dwFlags = STARTF_USESHOWWINDOW;
 		si.wShowWindow = SW_HIDE;

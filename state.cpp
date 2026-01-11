@@ -94,7 +94,7 @@ bool CState::RunScript() const
 
 
 void CState::Reset() {
-	tray_hide_ = true;
+	app_hide_ = true;
 	app_args_.clear();
 	app_path_.clear();
 	work_dir_.clear();
@@ -155,13 +155,13 @@ void  CState::SetAppWorkDir(const std::filesystem::path& val)
 	work_dir_ = canonicalize(val);
 }
 
-bool  CState::GetTrayHide() const {
-	return tray_hide_;
+bool  CState::GetAppHide() const {
+	return app_hide_;
 }
 
-void   CState::SetTrayHide(bool val)
+void   CState::SetAppHide(bool val)
 {
-	tray_hide_ = val;
+	app_hide_ = val;
 }
 
 const wstring& CState::GetAppArgs() const
