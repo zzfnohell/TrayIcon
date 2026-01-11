@@ -99,32 +99,6 @@ bool iequals(const std::wstring_view& a, const std::wstring_view& b) {
                       [](wchar_t a, wchar_t b) { return tolower(a) == tolower(b); });
 }
 
-void prefix_env(list<wstring>& env_list, list<wstring>& config_list) {
-
-    for (wstring& s : env_list) {
-        if (auto kvp = try_match(s)) {
-            wstring name, value;
-            tie(name, value) = *kvp;
-            wstring new_val = value;
-            bool has_prefix = false;
-            for (const wstring& cs : config_list) {
-                if (auto ckvp = try_match(cs)) {
-                    wstring cname, cvalue;
-                    tie(cname, cvalue) = *ckvp;
-                    if (iequals(cname, name)) {
-                        new_val = cvalue + new_val;
-                        has_prefix = true;
-                    }
-                }
-            }
-
-            if (has_prefix) {
-                s = name + L"=" + new_val;
-            }
-        }
-    }
-}
-
 void merge_env(list<wstring>& env_list, const list<wstring>& config_list) {
 
     for (wstring& s : env_list) {
@@ -168,8 +142,6 @@ void merge_env(list<wstring>& env_list, const list<wstring>& config_list) {
 
 void parse_env(list<wstring>& env_list) {
     const LPWCH env = GetEnvironmentStrings();
-    if (!env)
-        throw std::runtime_error("GetEnvironmentStrings failed");
     LPWCH p = env;
     while (*p) {
         const size_t n = wcslen(p);
