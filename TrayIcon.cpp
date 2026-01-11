@@ -8,6 +8,7 @@
 #include "state.h"
 #include "wnd.h"
 #include "env.h"
+#include "msg.h"
 using namespace std::filesystem;
 
 using namespace std;
@@ -15,15 +16,7 @@ using namespace std;
 #define IDC_START 2001
 #define IDC_STOP  2002
 
-#define SWM_TRAYMSG WM_APP//        the message ID sent to our window
 
-#define SWM_SHOW    (WM_APP + 1)//    show the window
-#define SWM_HIDE    (WM_APP + 2)//    hide the window
-#define SWM_EXIT    (WM_APP + 3)//    close the window
-
-#define UWM_UPDATEINFO    (WM_USER + 4)
-#define UWM_CHILDQUIT    (WM_USER + 5)
-#define UWM_CHILDCREATE    (WM_USER + 6)
 
 constexpr wchar_t BUTTON_CLASS[] = L"BUTTON";
 constexpr wchar_t STATIC_CLASS[] = L"STATIC";
@@ -150,9 +143,14 @@ void StartProcess()
 	STARTUPINFO si;
 	PROCESS_INFORMATION pi;
 	LPWSTR msg;
+	BOOL rc;
+	
+	if (!kState.RunScript()) {
+		return;
+	}
+	
 	ZeroMemory(&si, sizeof(si));
 	ZeroMemory(&pi, sizeof(pi));
-	BOOL rc;
 
 	HANDLE hJobObject = CreateJobObject(nullptr, nullptr);
 	assert(hJobObject != NULL);
@@ -320,7 +318,6 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	DestroyIcon(icon);
 	kData.hIcon = nullptr;
 
-	kState.RunScript();
 	StartProcess();
 	return TRUE;
 }

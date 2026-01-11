@@ -30,7 +30,7 @@ public:
 	bool GetTrayHide() const;
 	void SetTrayHide(bool val);
 
-	void  RunScript() const; 
+	bool RunScript() const;
 
 	std::map<std::wstring, std::wstring> env_map_;
 

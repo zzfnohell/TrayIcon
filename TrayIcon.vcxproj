@@ -204,6 +204,7 @@
   <ItemGroup>
     <ClInclude Include="core.h" />
     <ClInclude Include="env.h" />
+    <ClInclude Include="msg.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="state.h" />
     <ClInclude Include="stdafx.h" />

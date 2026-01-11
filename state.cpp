@@ -1,14 +1,23 @@
 #include "stdafx.h"
 #include "state.h"
 #include "core.h"
+#include "msg.h"
 
 using namespace std;
 using namespace std::filesystem;
 
 CState* kStatePtr;
-void DebugPrint(const wstringstream& ss)
+
+LPWSTR format_state_error(const wstring& s)
+{   
+	const rsize_t word_count = s.size() + 1;
+	wchar_t* p = new wchar_t[word_count];
+	wcscpy_s(p, word_count, s.c_str());
+	return p;
+}
+
+void DebugPrint(const std::wstring& s)
 {
-	const std::wstring& s = ss.str();
 	OutputDebugString(s.c_str());
 }
 
@@ -55,7 +64,7 @@ void CState::Initialize() {
 	core_load_libs(L);
 }
 
-void CState::RunScript() const
+bool CState::RunScript() const
 {
 	const path script_path = get_lua_file_path();
 	auto script_file = script_path.u8string();
@@ -64,9 +73,17 @@ void CState::RunScript() const
 	{
 		wstringstream ss;
 		ss << L"Error running script: " << lua_tostring(L, -1) << endl;
-		DebugPrint(ss);
+		auto wmsg = ss.str();
+		DebugPrint(wmsg);
+		LPWSTR msg = format_state_error(wmsg);
+		// ReSharper disable once CppAssignedValueIsNeverUsed
+		BOOL rc = PostMessage(kDlg, UWM_UPDATEINFO, NULL, reinterpret_cast<LPARAM>(msg));
+		assert(rc);
 		lua_pop(L, 1);
+		return false;
 	}
+
+	return true;
 }
 
 CState::CState()
