@@ -82,33 +82,33 @@ CState::~CState()
 	}
 }
 
-path CState::GetAppPath() const
+const path& CState::GetAppPath() const
 {
 	return "";
 }
 
-path CState::GetOnIconPath() const
+const path& CState::GetOnIconPath() const
 {
 	return "";
 }
 
-path CState::GetOffIconPath() const
+const path& CState::GetOffIconPath() const
 {
 	return "";
 }
 
-path CState::GetAppWorkDir() const
+const path& CState::GetAppWorkDir() const
 {
 	return "";
 }
 
-bool CState::GetAppHide() const {
-	return true;
+bool  CState::GetTrayHide() const {
+	return tray_hide_;
 }
 
-wstring CState::GetAppArgs() const
+const wstring& CState::GetAppArgs() const
 {
-	return L"";
+	return args_;
 }
 
 std::list<std::wstring> CState::GetCustomEnvList() const {

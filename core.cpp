@@ -64,6 +64,12 @@ static int lua_open_core(lua_State* L)
 	static const luaL_Reg methods[] = {
 		{"getenv", l_core_get_env},
 		{"setenv", l_core_set_env},
+		{"seticonon", l_core_set_env},
+		{"seticonoff", l_core_set_env},
+		{"setapppath", l_core_set_env},
+		{"setappargs", l_core_set_env},
+		{"setappworkdir", l_core_set_env},
+		{"settrayhide", l_core_set_env},
 		{"output", l_core_output},
 		{NULL, NULL}
 	};
