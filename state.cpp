@@ -87,9 +87,18 @@ const path& CState::GetAppPath() const
 	return app_path_;
 }
 
+void  CState::SetAppPath(const std::filesystem::path& val)
+{
+	app_path_ = val;
+}
+
 const path& CState::GetOnIconPath() const
 {
 	return on_icon_path_;
+}
+
+void  CState::SetOnIconPath(const std::filesystem::path& val) {
+	on_icon_path_ = val;
 }
 
 const path& CState::GetOffIconPath() const
@@ -97,16 +106,35 @@ const path& CState::GetOffIconPath() const
 	return off_icon_path_;
 }
 
+void  CState::SetOffIconPath(const std::filesystem::path& val)
+{
+	off_icon_path_ = val;
+}
+
 const path& CState::GetAppWorkDir() const
 {
 	return work_dir_;
+}
+
+void  CState::SetAppWorkDir(const std::filesystem::path& val)
+{
+	work_dir_ = val;
 }
 
 bool  CState::GetTrayHide() const {
 	return tray_hide_;
 }
 
+void   CState::SetTrayHide(bool val)
+{
+	tray_hide_ = val;
+}
+
 const wstring& CState::GetAppArgs() const
 {
 	return app_args_;
+}
+
+void  CState::SetAppArgs(const std::wstring& val) {
+	app_args_ = val;
 }

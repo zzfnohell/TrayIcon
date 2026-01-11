@@ -56,7 +56,7 @@ static int l_core_set_icon_on(lua_State* L)
 	void** meta = (void**)luaL_checkudata(L, 1, MetaTableName);
 	CState* state = (CState*)(*meta);
 	const char* s = luaL_checkstring(L, 2);
-	state->on_icon_path_ = path{ s };
+	state->SetOnIconPath(s);
 	return 0;
 }
 
@@ -65,7 +65,7 @@ static int l_core_set_icon_off(lua_State* L)
 	void** meta = (void**)luaL_checkudata(L, 1, MetaTableName);
 	CState* state = (CState*)(*meta);
 	const char* s = luaL_checkstring(L, 2);
-	state->on_icon_path_ = path{ s };
+	state->SetOffIconPath(s);
 	return 0;
 }
 
@@ -74,7 +74,7 @@ static int l_core_set_app_path(lua_State* L)
 	void** meta = (void**)luaL_checkudata(L, 1, MetaTableName);
 	CState* state = (CState*)(*meta);
 	const char* s = luaL_checkstring(L, 2);
-	state->app_path_ = path{ s };
+	state->SetAppPath(s);
 	return 0;
 }
 
@@ -83,7 +83,7 @@ static int l_core_set_app_args(lua_State* L)
 	void** meta = (void**)luaL_checkudata(L, 1, MetaTableName);
 	CState* state = (CState*)(*meta);
 	const char* s = luaL_checkstring(L, 2);
-	state->app_args_ = ansi_to_wstring(std::string{ s });
+	state->SetAppArgs(ansi_to_wstring(std::string{ s }));
 	return 0;
 }
 
@@ -92,7 +92,7 @@ static int l_core_set_work_dir(lua_State* L)
 	void** meta = (void**)luaL_checkudata(L, 1, MetaTableName);
 	CState* state = (CState*)(*meta);
 	const char* s = luaL_checkstring(L, 2);
-	state->work_dir_ = path{ s };
+	state->SetAppWorkDir(s);
 	return 0;
 }
 
@@ -102,7 +102,7 @@ static int l_core_set_tray_hide(lua_State* L)
 	CState* state = (CState*)(*meta);
 	luaL_checktype(L, 2, LUA_TBOOLEAN);
 	int val = lua_toboolean(L, 2);
-	state->tray_hide_ = val != 0;
+	state->SetTrayHide(val != 0);
 	return 0;
 }
 static int lua_open_core(lua_State* L)

@@ -205,5 +205,8 @@
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="wnd.h" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="TrayIcon.sample.lua" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 </Project>

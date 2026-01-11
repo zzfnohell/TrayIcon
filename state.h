@@ -17,11 +17,24 @@ public:
 
 	const std::wstring& GetAppArgs() const;
 	const std::filesystem::path& GetOnIconPath() const;
-	const	std::filesystem::path& GetOffIconPath() const;
+	const std::filesystem::path& GetOffIconPath() const;
 	const std::filesystem::path& GetAppPath() const;
-	const	std::filesystem::path& GetAppWorkDir() const;
+	const std::filesystem::path& GetAppWorkDir() const;
+
+ 	void SetAppArgs(const std::wstring&)  ;
+	void SetOnIconPath(const std::filesystem::path& val);
+	void SetOffIconPath(const std::filesystem::path& val);
+	void SetAppPath(const std::filesystem::path& val);
+	void SetAppWorkDir(const std::filesystem::path& val);
+
 	bool GetTrayHide() const;
+	void SetTrayHide(bool val);
+
 	void  RunScript() const; 
+
+	std::map<std::wstring, std::wstring> env_map_;
+private:
+	lua_State* L{ nullptr };
 
 	bool tray_hide_{ true };
 	std::wstring app_args_;
@@ -29,10 +42,6 @@ public:
 	std::filesystem::path work_dir_;
 	std::filesystem::path on_icon_path_;
 	std::filesystem::path off_icon_path_;
-	std::map<std::wstring, std::wstring> env_map_;
-private:
-	lua_State* L{ nullptr };
-
 
 };
 
