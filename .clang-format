@@ -1,0 +1,18 @@
+---
+BasedOnStyle: LLVM
+IndentWidth: 4
+ColumnLimit: 120
+AlignConsecutiveMacros: true
+IncludeBlocks: Preserve
+SortIncludes: true
+IncludeCategories:
+    - Regex: '^<.*\.h>'
+      Priority: 1
+    - Regex: '^"stdafx\.h"$'
+      Priority: 0
+---
+Language: Cpp
+# Force pointers to the type for C++.
+DerivePointerAlignment: false
+PointerAlignment: Left
+---

@@ -26,9 +26,7 @@ void unregister_class(HINSTANCE hInstance) {
     assert(rc);
 }
 
-
-HWND create_window(HINSTANCE hInstance, int nCmdShow)
-{
+HWND create_window(HINSTANCE hInstance, int nCmdShow) {
     constexpr int kWidth = 400;
     constexpr int kHeight = 200;
     int w = GetSystemMetrics(SM_CXSCREEN);
@@ -36,21 +34,10 @@ HWND create_window(HINSTANCE hInstance, int nCmdShow)
     int x = 0;
     int y = 0;
 
-    HWND wnd = CreateWindow(
-        kClassName,
-        L"TrayIcon",
-        WS_OVERLAPPEDWINDOW,
-        x + (w - 400) / 2,
-        y + (h - 200) / 2,
-        400,
-        200,
-        NULL,
-        NULL,
-        hInstance,
-        NULL);
+    HWND wnd = CreateWindow(kClassName, L"TrayIcon", WS_OVERLAPPEDWINDOW, x + (w - 400) / 2, y + (h - 200) / 2, 400,
+                            200, NULL, NULL, hInstance, NULL);
 
-    if (wnd)
-    {
+    if (wnd) {
         ShowWindow(wnd, nCmdShow);
         UpdateWindow(wnd);
     }
