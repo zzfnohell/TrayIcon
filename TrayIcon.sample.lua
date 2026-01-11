@@ -5,7 +5,7 @@ core:seticonoff([[.\icons\cow-off.ico]])
 core:setapppath([[C:\Windows\System32\cmd.exe]])
 core:setappargs([[ /K]])
 core:setappworkdir(".")
-core:settrayhide(true)
+core:setapphide(true)
 
 local name = "PATH"
 local val = os.getenv(name)
