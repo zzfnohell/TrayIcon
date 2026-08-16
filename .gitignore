@@ -196,3 +196,6 @@ FakesAssemblies/
 *.opt
 
 /vcpkg_installed/
+
+# CodeGraph local index
+.codegraph/
